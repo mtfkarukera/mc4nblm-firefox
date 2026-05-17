@@ -1,61 +1,57 @@
 {
   "manifest_version": 3,
-  "name": "__MSG_extensionName__",
-  "short_name": "Magic Clipper",
-  "version": "5.4.0",
+  "name": "__MSG_ext_name__",
+  "version": "1.0.0",
+  "description": "__MSG_ext_description__",
   "default_locale": "en",
-  "description": "__MSG_extensionDescription__",
   "browser_specific_settings": {
     "gecko": {
-      "id": "notebooklm-web-clipper@mtfkarukera",
+      "id": "magic-clipper-drive@mtfkarukera",
       "strict_min_version": "142.0",
       "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
+        "required": ["none"],
+        "optional": []
       }
-    },
-    "gecko_android": {
-      "strict_min_version": "142.0"
     }
   },
   "permissions": [
-    "storage",
-    "cookies",
-    "activeTab",
-    "notifications",
-    "downloads",
-    "contextMenus",
     "identity",
-    "scripting"
+    "storage",
+    "tabs",
+    "activeTab"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://www.googleapis.com/*",
+    "https://accounts.google.com/*"
   ],
   "background": {
     "scripts": [
       "src/background/background.js"
     ],
-    "type": "module"
-  },
-  "icons": {
-    "48": "icons/icon.svg",
-    "128": "icons/icon.svg"
+    "type": "module",
+    "persistent": false
   },
   "action": {
-    "default_icon": "icons/icon.svg",
     "default_popup": "src/popup/popup.html",
-    "default_title": "Clip to NotebookLM"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/content/orchestrator.js"
-      ],
-      "run_at": "document_idle"
+    "default_icon": {
+      "16": "icons/icon.svg",
+      "32": "icons/icon.svg",
+      "48": "icons/icon.svg",
+      "96": "icons/icon.svg",
+      "128": "icons/icon.svg"
     }
-  ]
+  },
+  "icons": {
+    "16": "icons/icon.svg",
+    "32": "icons/icon.svg",
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg",
+    "128": "icons/icon.svg"
+  },
+  "oauth2": {
+    "client_id": "270035285728-p7ssnc4jqitu5d12j5kuouinirf7vfnf.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive"
+    ]
+  }
 }

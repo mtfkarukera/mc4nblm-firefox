@@ -1,353 +1,39 @@
 {
-  "extensionName": {
-    "message": "Magic Clipper for NotebookLM",
-    "description": "Extension name displayed in Firefox about:addons"
-  },
-  "extensionDescription": {
-    "message": "Capture, clean, and seamlessly import any web page into Google NotebookLM with magic precision.",
-    "description": "Extension description displayed in Firefox about:addons"
-  },
-  "popupTitleCapture": {
-    "message": "Capture this page",
-    "description": "Main popup heading"
-  },
-  "popupLabelSelectNotebook": {
-    "message": "Select a notebook",
-    "description": "Label for notebook selection"
-  },
-  "popupPlaceholderSearchNotebook": {
-    "message": "Search notebooks...",
-    "description": "Placeholder for Fast Research input"
-  },
-  "popupLabelLocale": {
-    "message": "Language",
-    "description": "Label for the language selector"
-  },
-  "btnPdf": {
-    "message": "PDF",
-    "description": "Button label — export as PDF"
-  },
-  "btnPdfAriaLabel": {
-    "message": "Export page as PDF and import into NotebookLM",
-    "description": "Accessible label for the PDF button"
-  },
-  "btnMarkdown": {
-    "message": "Markdown",
-    "description": "Button label — export as Markdown"
-  },
-  "btnMarkdownAriaLabel": {
-    "message": "Export page as Markdown and import into NotebookLM",
-    "description": "Accessible label for the Markdown button"
-  },
-  "btnUrl": {
-    "message": "URL",
-    "description": "Button label — send URL"
-  },
-  "btnUrlAriaLabel": {
-    "message": "Send direct URL to NotebookLM",
-    "description": "Accessible label for the URL button"
-  },
-  "btnScreenshot": {
-    "message": "Screenshot",
-    "description": "Button label — capture screenshot"
-  },
-  "btnScreenshotAriaLabel": {
-    "message": "Capture screenshot and import into NotebookLM",
-    "description": "Accessible label for the Screenshot button"
-  },
-  "btnDirect": {
-    "message": "Direct Import",
-    "description": "Button label — direct import"
-  },
-  "btnDirectAriaLabel": {
-    "message": "Directly import file to NotebookLM",
-    "description": "Accessible label for the Direct Import button"
-  },
-  "btnDrive": {
-    "message": "Google Drive",
-    "description": "Button label — Google Drive"
-  },
-  "btnDriveAriaLabel": {
-    "message": "Import from Google Drive",
-    "description": "Accessible label for the Google Drive button"
-  },
-  "intentNoteLabelVisible": {
-    "message": "Research intention (optional)",
-    "description": "Label for the intent note field"
-  },
-  "intentNotePlaceholder": {
-    "message": "Optional: describe your research intention...",
-    "description": "Placeholder text for the intent note textarea"
-  },
-  "statusCapturing": {
-    "message": "Capturing…",
-    "description": "Status message when capturing begins"
-  },
-  "statusUploading": {
-    "message": "Uploading… ($PERCENT$%)",
-    "description": "Upload progress message with substitution",
+  "ext_name": { "message": "Magic Clipper for Google Drive", "description": "Extension name" },
+  "ext_description": { "message": "Send any file Firefox can display directly to your Google Drive in one click.", "description": "Extension description" },
+  "popup_auth_loading": { "message": "Connecting…", "description": "Auth status: loading" },
+  "popup_auth_connected": { "message": "Connected", "description": "Auth status: connected" },
+  "popup_auth_error": { "message": "Not connected", "description": "Auth status: error" },
+  "popup_detecting": { "message": "Analyzing tab…", "description": "Status when analyzing the current tab" },
+  "popup_idle_label": { "message": "DETECTED FILE", "description": "Label above the detected file" },
+  "popup_no_file": { "message": "No file detected", "description": "Message when no file is detected" },
+  "popup_unsupported": { "message": "This tab doesn't contain a supported file", "description": "Message when the file type is not supported" },
+  "popup_local_file": { "message": "Local files are not supported", "description": "Message when a local file is detected" },
+  "popup_btn_upload": { "message": "⬆️ Send to Google Drive", "description": "Upload button text" },
+  "popup_btn_uploading": { "message": "Sending…", "description": "Upload button text when sending" },
+  "popup_btn_disconnect": { "message": "Disconnect", "description": "Disconnect button text" },
+  "popup_confirm_disconnect": { "message": "Disconnect your Google account from this extension?", "description": "Disconnect confirmation message" },
+  "popup_btn_disconnect_confirm": { "message": "Confirm disconnect", "description": "Disconnect button confirmation state" },
+  "popup_uploading_label": { "message": "Upload in progress…", "description": "Label during upload" },
+  "popup_link_view": { "message": "📂 View in Google Drive", "description": "Link to view the uploaded file" },
+  "popup_success": {
+    "message": "$FILE_NAME$ sent!",
+    "description": "Success message with file name placeholder",
     "placeholders": {
-      "PERCENT": {
-        "content": "$1",
-        "example": "42"
-      }
+      "file_name": { "content": "$1" }
     }
   },
-  "statusSuccess": {
-    "message": "Imported successfully ✓",
-    "description": "Status message on success"
-  },
-  "statusProcessing": {
-    "message": "Processing…",
-    "description": "Status message during processing"
-  },
-  "errorApiChanged": {
-    "message": "NotebookLM API has changed. An update is required.",
-    "description": "User-facing error when API structure is modified"
-  },
-  "errorAuthExpired": {
-    "message": "Session expired. Please sign in to NotebookLM again.",
-    "description": "User-facing error on 401/403"
-  },
-  "errorUploadSessionMissing": {
-    "message": "Error initializing the upload session.",
-    "description": "User-facing error when upload URL is missing"
-  },
-  "errorTimeout": {
-    "message": "The request timed out. Please check your connection.",
-    "description": "User-facing error for timeouts"
-  },
-  "errorInjectionFailed": {
-    "message": "Cannot activate clipper on this restricted page.",
-    "description": "User-facing error when script injection fails"
-  },
-  "errorUnknown": {
-    "message": "An unknown error occurred. Check the console.",
-    "description": "User-facing error for uncategorized errors"
-  },
-  "menuContextImportSelection": {
-    "message": "Import selection to NotebookLM",
-    "description": "Context menu item to import selected text"
-  },
-  "popupLabelFormat": {
-    "message": "Import format"
-  },
-  "popupStatusReady": {
-    "message": "Ready"
-  },
-  "btnClose": {
-    "message": "✖ Close"
-  },
-  "linkOpenNotebook": {
-    "message": "Open notebook →"
-  },
-  "linkDownloadFile": {
-    "message": "Download {ext} ↓"
-  },
-  "linkDownloading": {
-    "message": "Downloading..."
-  },
-  "linkDownloaded": {
-    "message": "✅ Downloaded"
-  },
-  "statusConnected": {
-    "message": "Connected ({type})"
-  },
-  "statusDisconnected": {
-    "message": "Disconnected"
-  },
-  "errAuth": {
-    "message": "Authentication error."
-  },
-  "loadingNotebooks": {
-    "message": "Loading notebooks..."
-  },
-  "errLoadNotebooks": {
-    "message": "Error loading notebooks."
-  },
-  "noNotebookFound": {
-    "message": "No notebook found."
-  },
-  "notebookNotFound": {
-    "message": "Notebook not found."
-  },
-  "errNoSearchTerm": {
-    "message": "Enter a notebook name in the search field."
-  },
-  "creatingNotebook": {
-    "message": "Creating notebook \"{title}\"..."
-  },
-  "notebookCreated": {
-    "message": "Notebook \"{title}\" created ✅"
-  },
-  "errGeneric": {
-    "message": "Error: {msg}"
-  },
-  "errNoNotebook": {
-    "message": "Please select a notebook first."
-  },
-  "importingSelection": {
-    "message": "📋 Importing selection..."
-  },
-  "importingFormat": {
-    "message": "Importing as {label}..."
-  },
-  "warnLocalFile": {
-    "message": "⚠️ Local file — direct import is not available."
-  },
-  "errDownload": {
-    "message": "❌ Error"
-  },
-  "errGenericOccurred": {
-    "message": "An error occurred."
-  },
-  "apiChanged": {
-    "message": "The NotebookLM API has been updated by Google. An extension update is required."
-  },
-  "sessionExpired": {
-    "message": "Session expired. Please sign in again at notebooklm.google.com."
-  },
-  "uploadSessionFailed": {
-    "message": "Upload failed: could not obtain an upload session."
-  },
-  "timeout": {
-    "message": "Request timed out. Check your connection and try again."
-  },
-  "unexpectedError": {
-    "message": "An unexpected error occurred. Check the console for details."
-  },
-  "errFileReader": {
-    "message": "File reading failed."
-  },
-  "errNoCapture": {
-    "message": "No capture available."
-  },
-  "statusCreatingNb": {
-    "message": "Creating notebook..."
-  },
-  "statusUploadSelection": {
-    "message": "📋 Uploading selection..."
-  },
-  "statusImportedSelection": {
-    "message": "✅ Selection imported!"
-  },
-  "notifSelectionTitle": {
-    "message": "📎 Clip selection to NotebookLM"
-  },
-  "notifSelectionCaptured": {
-    "message": "Selection captured ✓"
-  },
-  "notifSelectionMsg": {
-    "message": "Click the NotebookLM Web Clipper button to choose a notebook."
-  },
-  "notifSuccessMsg": {
-    "message": "\"{title}\" added as {format} successfully!"
-  },
-  "statusFetchSession": {
-    "message": "Retrieving Personal Session..."
-  },
-  "statusScreenshot": {
-    "message": "📸 Capturing viewport..."
-  },
-  "statusUploadScreenshot": {
-    "message": "📸 Uploading screenshot..."
-  },
-  "statusImportedScreenshot": {
-    "message": "✅ Screenshot imported!"
-  },
-  "statusDownloadFile": {
-    "message": "⚡ Downloading file..."
-  },
-  "statusUploadFile": {
-    "message": "⚡ Uploading {ext}..."
-  },
-  "statusImportedFile": {
-    "message": "✅ File imported directly!"
-  },
-  "statusDrive": {
-    "message": "☁️ Connecting to Google Drive..."
-  },
-  "statusImportedDrive": {
-    "message": "✅ Google Drive document synced!"
-  },
-  "statusYoutube": {
-    "message": "YouTube detected → native import..."
-  },
-  "statusSendUrl": {
-    "message": "Sending URL to NotebookLM..."
-  },
-  "statusImportedYoutube": {
-    "message": "✅ YouTube video imported!"
-  },
-  "statusImportedUrl": {
-    "message": "✅ URL imported!"
-  },
-  "statusDomCapture": {
-    "message": "Requesting DOM capture..."
-  },
-  "statusSendMarkdown": {
-    "message": "Sending Markdown (text source)..."
-  },
-  "statusImportedMarkdown": {
-    "message": "✅ Markdown imported!"
-  },
-  "statusCheckQuota": {
-    "message": "Checking security quotas..."
-  },
-  "statusSendPdf": {
-    "message": "Sending PDF (Google Servers)..."
-  },
-  "statusImportedPdf": {
-    "message": "✅ PDF imported!"
-  },
-  "errGetNotebooks": {
-    "message": "Could not retrieve your notebooks. Check your connection and reload.",
-    "description": "Error when listing notebooks fails"
-  },
-  "errCreateNotebook": {
-    "message": "Could not create the notebook. Check your connection and try again.",
-    "description": "Error when notebook creation fails"
-  },
-  "errSelectionFailed": {
-    "message": "Could not import the selection. Please try again.",
-    "description": "Error when selection import fails"
-  },
-  "errWorkflowFailed": {
-    "message": "An error occurred during import. Check the console for details.",
-    "description": "Generic workflow error"
-  },
-  "errInjectionFailed": {
-    "message": "Cannot activate the clipper on this page (system or restricted page).",
-    "description": "Error when script injection fails on a restricted page"
-  },
-  "popupTitleAccountSwitcher": {
-    "message": "Switch Google account"
-  },
-  "statusConnecting": {
-    "message": "Connecting..."
-  },
-  "btnCreateNotebookTitle": {
-    "message": "Create a new notebook"
-  },
-  "btnPdfTitle": {
-    "message": "Embedded images, visual layout"
-  },
-  "btnMarkdownTitle": {
-    "message": "Perfect tables, ultra-light, native Gemini"
-  },
-  "btnUrlTitle": {
-    "message": "Instant import — NotebookLM scrapes the page"
-  },
-  "btnScreenshotTitle": {
-    "message": "Capture visible viewport as PNG"
-  },
-  "btnDriveTitle": {
-    "message": "Native Google Drive sync"
-  },
-  "btnDirectTitle": {
-    "message": "Import the original file as is"
-  },
-  "btnClearSelectionTitle": {
-    "message": "Cancel"
-  }
+  "err_local_file": { "message": "Local files are not supported. Open the file from an online URL.", "description": "Error: local file" },
+  "err_unsupported_type": { "message": "Unsupported file type.", "description": "Error: unsupported file type" },
+  "err_quota": { "message": "Insufficient Google Drive storage space.", "description": "Error: out of quota" },
+  "err_download_failed": {
+    "message": "Could not download file (HTTP $STATUS$).",
+    "description": "Error: download failed with status code",
+    "placeholders": {
+      "status": { "content": "$1" }
+    }
+  },
+  "err_auth_failed": { "message": "Google authentication failed.", "description": "Error: authentication failed" },
+  "err_network": { "message": "Network error. Check your internet connection.", "description": "Error: network issue" },
+  "err_upload_failed": { "message": "Upload failed. Please try again.", "description": "Error: upload failed" }
 }

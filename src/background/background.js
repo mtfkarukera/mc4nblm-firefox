@@ -1,985 +1,405 @@
-// background.js : Event Page MV3, Routeur central Asynchrone
-import { getPersonalAuthCookies, fetchCSRFToken } from './api/auth_personal.js';
-import { createPersonalNotebook, uploadPersonalSource, addTextSource, addUrlSource, addYouTubeSource, addDriveSource, RpcApiChangedError } from './api/rpc_client.js';
+// ============================================================
+// Magic Clipper for Google Drive — background.js (Event Page)
+// Auth OAuth2 + détection format + dossier Drive + upload
+// ============================================================
+
+import { FOLDER_NAME, MIME_MAP, initI18n, t, getFileNameFromUrl } from "../../shared/utils.js";
+
+// ----------------------------------------------------------
+// CONSTANTES
+// ----------------------------------------------------------
+
+const CLIENT_ID = "270035285728-p7ssnc4jqitu5d12j5kuouinirf7vfnf.apps.googleusercontent.com";
+const SCOPES    = "https://www.googleapis.com/auth/drive";
+
+// Table inversée : mimeType → extension (pour HEAD fallback)
+const MIME_TO_EXT = Object.fromEntries(
+  Object.entries(MIME_MAP).map(([ext, mime]) => [mime, ext])
+);
+
+// ----------------------------------------------------------
+// INITIALISATION i18n
+// ----------------------------------------------------------
+
+initI18n();
+
+// ----------------------------------------------------------
+// AUTHENTIFICATION OAuth2
+// ----------------------------------------------------------
 
 /**
- * Taille Max de PDF imposée par Google : 200 MB
- * Un octet Base64 pèse plus lourd (ratio ~1.37), cette limite mathématique garantit le quota réel.
+ * Lance le flux OAuth2 implicite via browser.identity.
+ * @param {boolean} interactive — true = popup consent, false = silencieux
+ * @returns {Promise<string|null>} Le token ou null si silencieux échoue
  */
-const MAX_BASE64_SIZE_BYTES = 200 * 1024 * 1024 * 1.37;
+async function getAccessToken(interactive = true) {
+  const redirectURL = browser.identity.getRedirectURL();
+  const authURL =
+    "https://accounts.google.com/o/oauth2/auth" +
+    "?client_id=" + encodeURIComponent(CLIENT_ID) +
+    "&redirect_uri=" + encodeURIComponent(redirectURL) +
+    "&response_type=token" +
+    "&scope=" + encodeURIComponent(SCOPES);
 
-/**
- * Modèles RegEx pour détecter et masquer les données sensibles
- * (cookies de session Google et jeton CSRF) dans les logs d'erreurs.
- */
-const SENSITIVE_PATTERNS = [
-    /SID=[^;]+/gi,
-    /HSID=[^;]+/gi,
-    /SSID=[^;]+/gi,
-    /SAPISID=[^;]+/gi,
-    /__Secure-1PSID=[^;]+/gi,
-    /__Secure-3PSID=[^;]+/gi,
-    /SNlM0e[^"]+/gi,
-    /at=[^&]+/gi        // Token CSRF encodé dans les payloads
-];
-
-/**
- * Purge un message d'erreur de toute donnée d'authentification sensible.
- * @param {string|any} message - Le message d'erreur brut
- * @returns {string} - Le message d'erreur sécurisé
- */
-function sanitizeErrorMessage(message) {
-    if (typeof message !== "string") {
-        message = String(message);
-    }
-
-    return SENSITIVE_PATTERNS.reduce(
-        (msg, pattern) => msg.replace(pattern, "[REDACTED]"),
-        message
-    );
-}
-
-/**
- * Interface générique et sécurisée pour effectuer tout appel RPC ou processus asynchrone délicat.
- * Intercepte les erreurs pour ne jamais exposer de données sensibles tout en notifiant l'utilisateur.
- * @param {Function} rpcFn - Fonction asynchrone à isoler (reçoit notebookId en argument)
- * @param {string} notebookId - ID du carnet ciblé
- * @param {Function} sendResponse - Le callback de messagerie Firefox (MV3)
- */
-async function safeRpcCall(rpcFn, notebookId, sendResponse) {
-    try {
-        const result = await rpcFn(notebookId);
-        sendResponse({ status: "success", data: result });
-    } catch (err) {
-
-        const rawMessage = err.message || "";
-
-        // Cas 1 : L'API Google a changé de structure
-        if (err instanceof RpcApiChangedError) {
-            console.error(`[NotebookLM][API_CHANGED] RPC: ${err.rpcId}`);
-            sendResponse({
-                status: "error",
-                i18nKey: "apiChanged",
-                code: "API_CHANGED"
-            });
-
-            // Cas 2 : Session expirée (cookies périmés HTTP 401/403)
-        } else if (rawMessage.includes("401") || rawMessage.includes("403")) {
-            console.warn(`[NotebookLM][AUTH_EXPIRED]`);
-            await browser.storage.local.remove(['nblm_personal_cookie', 'nblm_csrf']).catch(() => { });
-            sendResponse({
-                status: "error",
-                i18nKey: "sessionExpired",
-                code: "AUTH_EXPIRED"
-            });
-
-            // Cas 3 : Upload resumable — URL de session absente
-        } else if (rawMessage.includes("x-goog-upload-url")) {
-            console.error(`[NotebookLM][UPLOAD_SESSION_MISSING]`, sanitizeErrorMessage(rawMessage));
-            sendResponse({
-                status: "error",
-                i18nKey: "uploadSessionFailed",
-                code: "UPLOAD_SESSION_MISSING"
-            });
-
-            // Cas 4 : Erreur réseau / Timeout
-        } else if (err.name === "AbortError" || rawMessage.toLowerCase().includes("timeout")) {
-            console.warn(`[NotebookLM][TIMEOUT]`);
-            sendResponse({
-                status: "error",
-                i18nKey: "timeout",
-                code: "TIMEOUT"
-            });
-
-            // Cas 5 : Toute autre erreur inattendue
-        } else {
-            const safeLog = sanitizeErrorMessage(rawMessage);
-            console.error(`[NotebookLM][UNKNOWN]`, safeLog);
-            sendResponse({
-                status: "error",
-                i18nKey: "unexpectedError",
-                code: "UNKNOWN"
-            });
-        }
-    }
-}
-
-// Dernière capture (stockée en mémoire pour téléchargement local)
-let lastCaptureData = null;    // base64 PDF ou texte Markdown
-let lastCaptureFilename = null;
-let lastCaptureFormat = null;  // "pdf" ou "md"
-
-// =====================================================================
-// INJECTION DYNAMIQUE DES SCRIPTS (Lazy Loading)
-// =====================================================================
-const INJECTION_PIPELINE = {
-    pdf: [
-        "lib/Readability.js",
-        "lib/jspdf.umd.min.js",
-        "src/content/serializer.js",
-        "src/content/pdf_generator.js",
-    ],
-    md: [
-        "lib/Readability.js",
-        "src/content/serializer.js",
-        "src/content/md_generator.js",
-    ],
-    screenshot: [],
-    url: [],
-    direct: [],
-    drive: [],
-    selection: [],
-};
-
-const INJECTION_SENTINELS = {
-    "lib/Readability.js": "Readability",
-    "lib/jspdf.umd.min.js": "jspdf",
-    "src/content/serializer.js": "nwcserializer",
-    "src/content/pdf_generator.js": "nwcpdfgen",
-    "src/content/md_generator.js": "nwcmdgen",
-};
-
-/** Levée quand browser.scripting.executeScript échoue. */
-class InjectionError extends Error {
-    constructor(tabId, file, detail) {
-        super(`Injection échouée sur onglet ${tabId} — ${file} : ${detail}`);
-        this.name = "InjectionError";
-        this.tabId = tabId;
-        this.file = file;
-    }
-}
-
-/**
- * Retourne true si le script est déjà actif dans l'onglet.
- */
-async function isScriptInjected(tabId, scriptFile) {
-    const globalVar = INJECTION_SENTINELS[scriptFile];
-    if (!globalVar) return false;
-
-    try {
-        const [{ result }] = await browser.scripting.executeScript({
-            target: { tabId },
-            func: (varName) => typeof window[varName] !== "undefined",
-            args: [globalVar]
-        });
-        return result === true;
-    } catch {
-        return false;
-    }
-}
-
-/**
- * Injecte une liste de scripts dans l'ordre dans un onglet.
- * Ignore silencieusement les scripts déjà présents.
- */
-async function injectScriptsSequentially(tabId, scripts) {
-    for (const file of scripts) {
-        const alreadyInjected = await isScriptInjected(tabId, file);
-        if (alreadyInjected) continue;
-
-        try {
-            await browser.scripting.executeScript({
-                target: { tabId },
-                files: [file],
-            });
-        } catch (err) {
-            throw new InjectionError(tabId, file, err.message);
-        }
-    }
-}
-
-/**
- * Devine le MIME type d'un fichier Drive à partir du titre de l'onglet Firefox.
- * Format attendu : "nomfichier.ext - Google Drive"
- */
-function guessMimeFromTitle(title) {
-    const EXTENSION_MAP = {
-        'pdf': 'application/pdf', 'txt': 'text/plain', 'md': 'text/markdown',
-        'csv': 'text/csv', 'epub': 'application/epub+zip',
-        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
-        'gif': 'image/gif', 'webp': 'image/webp', 'svg': 'image/svg+xml',
-        'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'mp4': 'video/mp4',
-    };
-    const cleaned = title.replace(/\s*-\s*Google Drive\s*$/i, '').trim();
-    const dotIndex = cleaned.lastIndexOf('.');
-    if (dotIndex > 0) {
-        const ext = cleaned.substring(dotIndex + 1).toLowerCase();
-        if (EXTENSION_MAP[ext]) return EXTENSION_MAP[ext];
-    }
-    return 'application/pdf';
-}
-
-/**
- * Types de fichiers supportés pour l'Import Direct.
- * Liste complète des formats acceptés par NotebookLM.
- * Mapping MIME type → { label, extension, category }
- */
-const DIRECT_IMPORT_TYPES = {
-    // Documents
-    'application/pdf': { label: 'PDF', ext: '.pdf', category: 'document' },
-    'text/plain': { label: 'TXT', ext: '.txt', category: 'document' },
-    'text/markdown': { label: 'MD', ext: '.md', category: 'document' },
-    'text/csv': { label: 'CSV', ext: '.csv', category: 'document' },
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { label: 'DOCX', ext: '.docx', category: 'document' },
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': { label: 'PPTX', ext: '.pptx', category: 'document' },
-    'application/epub+zip': { label: 'EPUB', ext: '.epub', category: 'document' },
-    // Images
-    'image/png': { label: 'PNG', ext: '.png', category: 'image' },
-    'image/jpeg': { label: 'JPEG', ext: '.jpg', category: 'image' },
-    'image/gif': { label: 'GIF', ext: '.gif', category: 'image' },
-    'image/bmp': { label: 'BMP', ext: '.bmp', category: 'image' },
-    'image/webp': { label: 'WebP', ext: '.webp', category: 'image' },
-    'image/avif': { label: 'AVIF', ext: '.avif', category: 'image' },
-    'image/tiff': { label: 'TIFF', ext: '.tiff', category: 'image' },
-    'image/x-icon': { label: 'ICO', ext: '.ico', category: 'image' },
-    'image/jp2': { label: 'JP2', ext: '.jp2', category: 'image' },
-    'image/heic': { label: 'HEIC', ext: '.heic', category: 'image' },
-    'image/heif': { label: 'HEIF', ext: '.heif', category: 'image' },
-    // Audio
-    'audio/mpeg': { label: 'MP3', ext: '.mp3', category: 'audio' },
-    'audio/wav': { label: 'WAV', ext: '.wav', category: 'audio' },
-    'audio/x-wav': { label: 'WAV', ext: '.wav', category: 'audio' },
-    'audio/ogg': { label: 'OGG', ext: '.ogg', category: 'audio' },
-    'audio/aac': { label: 'AAC', ext: '.aac', category: 'audio' },
-    'audio/mp4': { label: 'M4A', ext: '.m4a', category: 'audio' },
-    'audio/x-m4a': { label: 'M4A', ext: '.m4a', category: 'audio' },
-    'audio/aiff': { label: 'AIFF', ext: '.aiff', category: 'audio' },
-    'audio/x-aiff': { label: 'AIFF', ext: '.aiff', category: 'audio' },
-    'audio/midi': { label: 'MIDI', ext: '.mid', category: 'audio' },
-    'audio/x-midi': { label: 'MIDI', ext: '.mid', category: 'audio' },
-    'audio/opus': { label: 'OPUS', ext: '.opus', category: 'audio' },
-    'audio/amr': { label: 'AMR', ext: '.amr', category: 'audio' },
-    'audio/x-ms-wma': { label: 'WMA', ext: '.wma', category: 'audio' },
-    'audio/x-pn-realaudio': { label: 'RA', ext: '.ra', category: 'audio' },
-    'audio/basic': { label: 'AU', ext: '.au', category: 'audio' },
-    // Vidéo
-    'video/mp4': { label: 'MP4', ext: '.mp4', category: 'video' },
-    'video/mpeg': { label: 'MPEG', ext: '.mpeg', category: 'video' },
-    'video/x-msvideo': { label: 'AVI', ext: '.avi', category: 'video' },
-    'video/3gpp': { label: '3GP', ext: '.3gp', category: 'video' },
-    'video/3gpp2': { label: '3G2', ext: '.3g2', category: 'video' },
-};
-
-/**
- * Mapping extension → MIME type pour la détection par URL (fichiers locaux surtout).
- */
-const EXT_TO_MIME = {
-    // Documents
-    'pdf': 'application/pdf', 'txt': 'text/plain', 'md': 'text/markdown',
-    'csv': 'text/csv', 'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'epub': 'application/epub+zip',
-    // Images
-    'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'jpe': 'image/jpeg',
-    'gif': 'image/gif', 'bmp': 'image/bmp', 'webp': 'image/webp', 'avif': 'image/avif',
-    'tif': 'image/tiff', 'tiff': 'image/tiff', 'ico': 'image/x-icon',
-    'jp2': 'image/jp2', 'heic': 'image/heic', 'heif': 'image/heif',
-    // Audio
-    'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg', 'aac': 'audio/aac',
-    'm4a': 'audio/mp4', 'aif': 'audio/aiff', 'aifc': 'audio/aiff', 'aiff': 'audio/aiff',
-    'mid': 'audio/midi', 'opus': 'audio/opus', 'amr': 'audio/amr', 'wma': 'audio/x-ms-wma',
-    'ra': 'audio/x-pn-realaudio', 'ram': 'audio/x-pn-realaudio', 'au': 'audio/basic',
-    'snd': 'audio/basic', 'cda': 'audio/mpeg',
-    // Vidéo
-    'mp4': 'video/mp4', 'mpeg': 'video/mpeg', 'avi': 'video/x-msvideo',
-    '3gp': 'video/3gpp', '3g2': 'video/3gpp2',
-};
-
-/** Regex d'extensions pour la détection rapide par URL */
-const SUPPORTED_EXT_REGEX = /\.(pdf|txt|md|docx|csv|pptx|epub|avif|bmp|gif|ico|jp2|png|webp|tif|tiff|heic|heif|jpe?g|3g2|3gp|aac|aif|aifc|aiff|amr|au|avi|cda|m4a|mid|mp3|mp4|mpeg|ogg|opus|ra|ram|snd|wav|wma)$/i;
-
-/**
- * Détecte si une URL pointe vers un fichier directement importable.
- * Combine l'analyse de l'extension URL + requête HEAD pour confirmer le MIME type.
- */
-async function detectFileType(url) {
-    if (!url || (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('file://'))) {
-        return { directImport: false };
-    }
-
-    const isLocal = url.startsWith('file://');
-
-    // 1. Heuristique rapide : extension URL
-    const urlPath = new URL(url).pathname.toLowerCase();
-    const extMatch = urlPath.match(SUPPORTED_EXT_REGEX);
-
-    // 2. Pour les URLs HTTP, confirmer via HEAD request
-    let detectedMime = null;
-    if (!isLocal && url.startsWith('http')) {
-        try {
-            const headResp = await fetch(url, { method: 'HEAD', redirect: 'follow' });
-            const contentType = headResp.headers.get('content-type') || '';
-            detectedMime = contentType.split(';')[0].trim().toLowerCase();
-        } catch (e) {
-            console.warn('[Background] HEAD request échouée:', e.message);
-        }
-    }
-
-    // 3. Tenter de résoudre à partir de l'extension si HEAD n'a rien donné
-    if (!detectedMime && extMatch) {
-        detectedMime = EXT_TO_MIME[extMatch[1].toLowerCase()];
-    }
-
-    // 4. Vérifier si le type est supporté
-    if (detectedMime && DIRECT_IMPORT_TYPES[detectedMime]) {
-        const typeInfo = DIRECT_IMPORT_TYPES[detectedMime];
-        return {
-            directImport: true,
-            mimeType: detectedMime,
-            label: typeInfo.label,
-            category: typeInfo.category,
-            isLocal: isLocal
-        };
-    }
-
-    return { directImport: false };
-}
-
-// ═══ Menu Contextuel : Capture de sélection ═══
-browser.runtime.onInstalled.addListener(async () => {
-    browser.storage.local.remove('nwc_pending_selection');
-
-    try {
-        await browser.contextMenus.removeAll();
-        browser.contextMenus.create({
-            id: "nwc-clip-selection",
-            title: browser.i18n.getMessage("notifSelectionTitle"),
-            contexts: ["selection"]
-        });
-    } catch (e) {
-        console.warn("[Background] contextMenus non disponible:", e.message);
-    }
-});
-
-if (browser.contextMenus?.onClicked) {
-    browser.contextMenus.onClicked.addListener(async (info, tab) => {
-        if (info.menuItemId === "nwc-clip-selection" && info.selectionText) {
-            let selectionHtml = null;
-            try {
-                const response = await browser.tabs.sendMessage(tab.id, {
-                    action: "GET_SELECTION_HTML"
-                });
-                if (response?.html) {
-                    selectionHtml = response.html;
-                }
-            } catch (e) {
-                console.warn("[Background] Content script inaccessible, fallback texte brut.");
-            }
-
-            await browser.storage.local.set({
-                nwc_pending_selection: {
-                    text: info.selectionText,
-                    html: selectionHtml,
-                    pageUrl: info.pageUrl || tab.url,
-                    pageTitle: tab.title,
-                    timestamp: Date.now()
-                }
-            });
-
-            try {
-                await browser.action.openPopup();
-            } catch (e) {
-                console.warn("[Background] openPopup() échoué:", e.message);
-                browser.notifications.create("nwc-selection-ready", {
-                    type: "basic",
-                    iconUrl: browser.runtime.getURL("icons/icon.svg"),
-                    title: browser.i18n.getMessage("notifSelectionCaptured"),
-                    message: browser.i18n.getMessage("notifSelectionMsg")
-                });
-            }
-        }
+  try {
+    const responseURL = await browser.identity.launchWebAuthFlow({
+      url: authURL,
+      interactive: interactive
     });
+    const params = new URLSearchParams(new URL(responseURL).hash.slice(1));
+    const token = params.get("access_token");
+    const expiresIn = parseInt(params.get("expires_in")) || 3600;
+    const expiresAt = Date.now() + expiresIn * 1000;
+
+    await browser.storage.local.set({ accessToken: token, expiresAt });
+    return token;
+  } catch (e) {
+    if (!interactive) return null;
+    throw e;
+  }
 }
 
-// Routeur Principal recevant les messages de la Popup et du Content Script
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-
-    if (message.action === "GET_AUTH_STATUS") {
-        browser.cookies.getAll({ url: "https://notebooklm.google.com/" }).then(cookies => {
-            if (cookies && cookies.length > 0) {
-                sendResponse({ status: "CONNECTE", type: "PERSONAL" });
-            } else {
-                sendResponse({ status: "DECONNECTE", type: null });
-            }
-        }).catch(() => {
-            sendResponse({ status: "DECONNECTE", type: null });
-        });
-        return true;
-    }
-
-    if (message.action === "GET_ACCOUNTS") {
-        (async () => {
-            try {
-                const { getPersonalAuthCookies, detectGoogleAccounts } = await import('./api/auth_personal.js');
-                const cookieString = await getPersonalAuthCookies();
-                const accounts = await detectGoogleAccounts(cookieString);
-
-                const data = await browser.storage.local.get('nblm_active_authuser');
-                const activeIndex = data.nblm_active_authuser !== undefined ? data.nblm_active_authuser : 0;
-
-                sendResponse({ accounts, activeIndex });
-            } catch (err) {
-                console.error("[Background] Échec GET_ACCOUNTS: ", err.message);
-                sendResponse({ error: err.message, accounts: [] });
-            }
-        })();
-        return true;
-    }
-
-    if (message.action === "SET_ACCOUNT") {
-        browser.storage.local.set({ nblm_active_authuser: message.index }).then(() => {
-            sendResponse({ ok: true });
-        });
-        return true;
-    }
-
-    if (message.action === "GET_NOTEBOOKS") {
-        (async () => {
-            try {
-                const { getPersonalAuthCookies, fetchCSRFToken } = await import('./api/auth_personal.js');
-                const cookieString = await getPersonalAuthCookies();
-
-                const data = await browser.storage.local.get('nblm_active_authuser');
-                const activeIndex = data.nblm_active_authuser !== undefined ? data.nblm_active_authuser : 0;
-
-                await fetchCSRFToken(cookieString, activeIndex);
-                const { listPersonalNotebooks } = await import('./api/rpc_client.js');
-                const notebooks = await listPersonalNotebooks(activeIndex);
-
-                sendResponse({ notebooks });
-            } catch (err) {
-                console.error("[NotebookLM][GET_NOTEBOOKS]", sanitizeErrorMessage(err.message));
-                sendResponse({
-                    status: "error",
-                    i18nKey: "errGetNotebooks",   // ✅ CORRECTION 1
-                    code: "UNKNOWN"
-                });
-            }
-        })();
-        return true;
-    }
-
-    // Création de carnet à la volée
-    if (message.action === "CREATE_NOTEBOOK") {
-        (async () => {
-            try {
-                const cookieString = await getPersonalAuthCookies();
-                const data = await browser.storage.local.get('nblm_active_authuser');
-                const activeIndex = data.nblm_active_authuser !== undefined ? data.nblm_active_authuser : 0;
-
-                await fetchCSRFToken(cookieString, activeIndex);
-
-                const notebookId = await createPersonalNotebook(message.title, activeIndex);
-                sendResponse({ notebookId });
-            } catch (err) {
-                console.error("[NotebookLM][CREATE_NOTEBOOK]", sanitizeErrorMessage(err.message));
-                sendResponse({
-                    status: "error",
-                    i18nKey: "errCreateNotebook",  // ✅ CORRECTION 2
-                    code: "UNKNOWN"
-                });
-            }
-        })();
-        return true;
-    }
-
-    // Proxy CORS pour télécharger les images sans bloquer jsPDF
-    if (message.action === "FETCH_IMAGE") {
-        (async () => {
-            try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
-                const response = await fetch(message.url, { signal: controller.signal });
-                clearTimeout(timeout);
-                if (!response.ok) {
-                    sendResponse({ error: `HTTP ${response.status}` });
-                    return;
-                }
-                const blob = await response.blob();
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    sendResponse({ data: reader.result });
-                };
-                reader.onerror = () => sendResponse({ error: "FileReader échoué" });
-                reader.readAsDataURL(blob);
-            } catch (err) {
-                sendResponse({ error: err.message });
-            }
-        })();
-        return true;
-    }
-
-    // Téléchargement local de la dernière capture (PDF ou Markdown)
-    if (message.action === "DOWNLOAD_CAPTURE") {
-        if (!lastCaptureData) {
-            sendResponse({ error: "Aucune capture disponible" });
-            return true;
-        }
-        (async () => {
-            try {
-                let blobUrl;
-                let ext;
-
-                if (lastCaptureFormat === "md") {
-                    const blob = new Blob([lastCaptureData], { type: 'text/markdown; charset=utf-8' });
-                    blobUrl = URL.createObjectURL(blob);
-                    ext = '.md';
-                } else {
-                    const base64 = lastCaptureData.split(',')[1];
-                    const byteChars = atob(base64);
-                    const byteArr = new Uint8Array(byteChars.length);
-                    for (let i = 0; i < byteChars.length; i++) {
-                        byteArr[i] = byteChars.charCodeAt(i);
-                    }
-                    const blob = new Blob([byteArr], { type: 'application/pdf' });
-                    blobUrl = URL.createObjectURL(blob);
-                    ext = '.pdf';
-                }
-
-                const platformInfo = await browser.runtime.getPlatformInfo();
-                const isMobile = platformInfo.os === 'android';
-
-                await browser.downloads.download({
-                    url: blobUrl,
-                    filename: (lastCaptureFilename || 'capture') + ext,
-                    saveAs: !isMobile
-                });
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-                sendResponse({ ok: true });
-            } catch (err) {
-                sendResponse({ error: err.message });
-            }
-        })();
-        return true;
-    }
-
-    // Détection du type de fichier pour l'Import Direct
-    if (message.action === "DETECT_FILE_TYPE") {
-        detectFileType(message.url).then(result => {
-            sendResponse(result);
-        }).catch(() => {
-            sendResponse({ directImport: false });
-        });
-        return true;
-    }
-
-    if (message.action === "START_CAPTURE") {
-        // Import de sélection : pipeline simplifié (texte → addTextSource)
-        if (message.format === 'selection' && message.selectionData) {
-            (async () => {
-                try {
-                    const sel = message.selectionData;
-                    const cookieString = await getPersonalAuthCookies();
-                    const data = await browser.storage.local.get('nblm_active_authuser');
-                    const activeIndex = data.nblm_active_authuser !== undefined ? data.nblm_active_authuser : 0;
-                    await fetchCSRFToken(cookieString, activeIndex);
-
-                    let finalNotebookId = message.notebookId;
-                    if (finalNotebookId === "CREATE_NEW") {
-                        notifyUI("STATUS_UPDATE", { i18nKey: "statusCreatingNb", status: "info" });
-                        const title = `Capture - ${new Date().toLocaleDateString()}`;
-                        finalNotebookId = await createPersonalNotebook(title, activeIndex);
-                    }
-                    if (!finalNotebookId) throw new Error("Échec de la récupération de l'ID du carnet.");
-
-                    notifyUI("STATUS_UPDATE", { i18nKey: "statusUploadSelection", status: "info" });
-
-                    const cleanTitle = (sel.pageTitle || 'Sélection')
-                        .replace(/[<>:"/\\|?*]/g, '').trim().substring(0, 80);
-                    const sourceTitle = `📋 ${cleanTitle}`;
-
-                    const content = [
-                        `Source: ${sel.pageUrl}`,
-                        `Titre: ${sel.pageTitle}`,
-                        `Date de capture: ${new Date().toLocaleString()}`,
-                        '',
-                        '---',
-                        '',
-                        sel.text
-                    ].join('\n');
-
-                    await addTextSource(finalNotebookId, sourceTitle, content, activeIndex);
-
-                    const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
-                    notifyUI("STATUS_UPDATE", {
-                        i18nKey: "statusImportedSelection",
-                        status: "success",
-                        linkUrl: notebookUrl,
-                        showDownload: false
-                    });
-
-                    browser.notifications.create({
-                        type: "basic",
-                        iconUrl: browser.runtime.getURL("icons/icon.svg"),
-                        title: browser.i18n.getMessage("extensionName"),
-                        message: browser.i18n.getMessage("notifSuccessMsg").replace("{title}", cleanTitle).replace("{format}", "Sélection")
-                    });
-                } catch (err) {
-                    console.error("[NotebookLM][SELECTION]", sanitizeErrorMessage(err.message));
-                    notifyUI("STATUS_UPDATE", {
-                        status: "error",
-                        i18nKey: "errSelectionFailed",  // ✅ CORRECTION 3
-                        code: "UNKNOWN"
-                    });
-                }
-            })();
-        } else {
-            // Formats classiques : PDF, MD, URL, Screenshot, Direct
-            (async () => {
-                const format = message.format || "pdf";
-                const scripts = INJECTION_PIPELINE[format] ?? [];
-
-                if (scripts.length > 0) {
-                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    if (tabs.length > 0) {
-                        try {
-                            await injectScriptsSequentially(tabs[0].id, scripts);
-                        } catch (err) {
-                            if (err instanceof InjectionError) {
-                                sendResponse({
-                                    status: "error",
-                                    code: "INJECTION_FAILED",
-                                    i18nKey: "errInjectionFailed"  // ✅ CORRECTION 5
-                                });
-                                return true;
-                            }
-                            throw err;
-                        }
-                    }
-                }
-
-                executeCaptureAndUploadWorkflow(message.notebookId, format, message.intentNote)
-                    .catch(err => {
-                        console.error("[NotebookLM][WORKFLOW]", sanitizeErrorMessage(err.message));
-                        notifyUI("STATUS_UPDATE", {
-                            status: "error",
-                            i18nKey: "errWorkflowFailed",  // ✅ CORRECTION 4
-                            code: "UNKNOWN"
-                        });
-                    });
-            })();
-        }
-    }
-
-    return true;
-});
-
 /**
- * Mise à jour de l'interface visuelle (Popup si elle est encore active)
+ * Retourne un token valide : cache → silencieux → interactif.
  */
-function notifyUI(action, payload) {
-    browser.runtime.sendMessage({ type: action, ...payload }).catch(() => {
-        // La popup est sûrement fermée, on ignore l'erreur
-    });
+async function getValidToken() {
+  const { accessToken, expiresAt } = await browser.storage.local.get(["accessToken", "expiresAt"]);
+
+  // Token encore valide (marge de sécurité : 2 min)
+  if (accessToken && expiresAt > Date.now() + 120_000) {
+    return accessToken;
+  }
+
+  // Tentative silencieuse d'abord (pas de popup)
+  const silentToken = await getAccessToken(false);
+  if (silentToken) return silentToken;
+
+  // Flux interactif uniquement en dernier recours
+  return getAccessToken(true);
 }
 
-/**
- * Moteur de Séquence Stricte — PDF, Markdown ou URL
- */
-async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentNote = null) {
-
-    notifyUI("STATUS_UPDATE", { i18nKey: "statusFetchSession", status: "info" });
-
-    const cookieString = await getPersonalAuthCookies();
-    const data = await browser.storage.local.get('nblm_active_authuser');
-    const activeIndex = data.nblm_active_authuser !== undefined ? data.nblm_active_authuser : 0;
-
-    await fetchCSRFToken(cookieString, activeIndex);
-
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    if (tabs.length === 0) throw new Error("Aucun onglet actif trouvé.");
-
-    const activeTab = tabs[0];
-    const pageTitle = activeTab.title || "Capture";
-    const pageUrl = activeTab.url;
-
-    const cleanTitle = pageTitle
-        .replace(/[<>:"/\\|?*]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 100);
-
-    let finalNotebookId = targetNotebookId;
-    if (finalNotebookId === "CREATE_NEW") {
-        notifyUI("STATUS_UPDATE", { i18nKey: "statusCreatingNb", status: "info" });
-        const title = `Capture - ${new Date().toLocaleDateString()}`;
-        finalNotebookId = await createPersonalNotebook(title, activeIndex);
-    }
-    if (!finalNotebookId) throw new Error("Échec de la récupération de l'ID du carnet.");
-
-    if (format === "screenshot") {
-        notifyUI("STATUS_UPDATE", { i18nKey: "statusScreenshot", status: "info" });
-
-        const dataUrl = await browser.tabs.captureVisibleTab(null, { format: 'png' });
-
-        const base64 = dataUrl.split(',')[1];
-        const binaryStr = atob(base64);
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-            bytes[i] = binaryStr.charCodeAt(i);
-        }
-        const pngBlob = new Blob([bytes], { type: 'image/png' });
-        const screenshotFilename = `${cleanTitle}.png`;
-
-        notifyUI("STATUS_UPDATE", { i18nKey: "statusUploadScreenshot", status: "info" });
-        await uploadFileBlob(finalNotebookId, pngBlob, screenshotFilename, activeIndex);
-
-        const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
-        notifyUI("STATUS_UPDATE", {
-            i18nKey: "statusImportedScreenshot",
-            status: "success",
-            linkUrl: notebookUrl,
-            showDownload: false
-        });
-
-    } else if (format === "direct") {
-        notifyUI("STATUS_UPDATE", { i18nKey: "statusDownloadFile", status: "info" });
-
-        let fileResponse;
-        try {
-            fileResponse = await fetch(pageUrl, { credentials: 'include' });
-        } catch (fetchErr) {
-            throw new Error(`Impossible de récupérer le fichier. Le serveur bloque le téléchargement.`);
-        }
-        if (!fileResponse.ok) throw new Error(`Échec téléchargement: HTTP ${fileResponse.status}`);
-
-        const fileBlob = await fileResponse.blob();
-        const mimeType = fileBlob.type || 'application/octet-stream';
-
-        const typeInfo = DIRECT_IMPORT_TYPES[mimeType];
-        const ext = typeInfo ? typeInfo.ext : '';
-        const directFilename = `${cleanTitle}${ext}`;
-
-        if (fileBlob.size > 200 * 1024 * 1024) {
-            throw new Error("Upload refusé : Le fichier dépasse la limite de 200 MB.");
-        }
-
-        notifyUI("STATUS_UPDATE", { i18nKey: "statusUploadFile", i18nSubs: { ext: ext.replace('.', '').toUpperCase() || 'fichier' }, status: "info" });
-        await uploadFileBlob(finalNotebookId, fileBlob, directFilename, activeIndex);
-
-        const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
-        notifyUI("STATUS_UPDATE", {
-            i18nKey: "statusImportedFile",
-            status: "success",
-            linkUrl: notebookUrl,
-            showDownload: false
-        });
-
-    } else if (format === "drive") {
-        notifyUI("STATUS_UPDATE", { i18nKey: "statusDrive", status: "info" });
-
-        let fileId, mimeType = '';
-
-        const workspaceMatch = pageUrl.match(/\/(document|spreadsheets|presentation)\/d\/([a-zA-Z0-9-_]+)/);
-        if (workspaceMatch) {
-            fileId = workspaceMatch[2];
-            const typeStr = workspaceMatch[1];
-            if (typeStr === 'document') mimeType = 'application/vnd.google-apps.document';
-            else if (typeStr === 'spreadsheets') mimeType = 'application/vnd.google-apps.spreadsheet';
-            else if (typeStr === 'presentation') mimeType = 'application/vnd.google-apps.presentation';
-        }
-
-        if (!fileId) {
-            const driveMatch = pageUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9-_]+)/);
-            if (driveMatch) {
-                fileId = driveMatch[1];
-                mimeType = guessMimeFromTitle(pageTitle);
-            }
-        }
-
-        if (!fileId) {
-            throw new Error("URL Google Drive non reconnue ou invalide.");
-        }
-
-        let driveTitle = pageTitle
-            .replace(/ - Google (Docs|Sheets|Slides|Drive)$/i, '')
-            .trim();
-
-        await addDriveSource(finalNotebookId, fileId, mimeType, driveTitle, activeIndex);
-
-        const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
-        notifyUI("STATUS_UPDATE", {
-            i18nKey: "statusImportedDrive",
-            status: "success",
-            linkUrl: notebookUrl,
-            showDownload: false
-        });
-
-    } else if (format === "url") {
-        const isYouTube = /(?:youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts\/)/.test(pageUrl);
-
-        if (isYouTube) {
-            notifyUI("STATUS_UPDATE", { i18nKey: "statusYoutube", status: "info" });
-            await addYouTubeSource(finalNotebookId, pageUrl, activeIndex);
-        } else {
-            notifyUI("STATUS_UPDATE", { i18nKey: "statusSendUrl", status: "info" });
-            await addUrlSource(finalNotebookId, pageUrl, activeIndex);
-        }
-
-        const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
-        notifyUI("STATUS_UPDATE", {
-            i18nKey: isYouTube ? "statusImportedYoutube" : "statusImportedUrl",
-            status: "success",
-            linkUrl: notebookUrl,
-            showDownload: false
-        });
-
-    } else {
-        // ═══ Pipelines PDF / Markdown : content script requis ═══
-        notifyUI("STATUS_UPDATE", { i18nKey: "statusDomCapture", status: "info" });
-
-        const response = await browser.tabs.sendMessage(activeTab.id, {
-            action: "START_CAPTURE",
-            format: format,
-            intentNote: intentNote ?? null
-        });
-        if (response?.status !== "SUCCESS") throw new Error("Erreur Content Script : " + response?.error);
-
-        const capturedData = response.payload;
-        const capturedFormat = response.format || format;
-
-        lastCaptureData = capturedData;
-        lastCaptureFilename = cleanTitle;
-        lastCaptureFormat = capturedFormat;
-
-        if (capturedFormat === "md") {
-            notifyUI("STATUS_UPDATE", { i18nKey: "statusSendMarkdown", status: "info" });
-            await addTextSource(finalNotebookId, cleanTitle, capturedData, activeIndex);
-
-            const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
-            notifyUI("STATUS_UPDATE", {
-                i18nKey: "statusImportedMarkdown",
-                status: "success",
-                linkUrl: notebookUrl,
-                showDownload: true
-            });
-
-        } else {
-            notifyUI("STATUS_UPDATE", { i18nKey: "statusCheckQuota", status: "info" });
-
-            if (capturedData.length > MAX_BASE64_SIZE_BYTES) {
-                throw new Error("Upload refusé : Le fichier PDF dépasse la limite de 200 MB.");
-            }
-
-            notifyUI("STATUS_UPDATE", { i18nKey: "statusSendPdf", status: "info" });
-            await uploadPersonalSource(finalNotebookId, capturedData, cleanTitle, activeIndex);
-
-            const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
-            notifyUI("STATUS_UPDATE", {
-                i18nKey: "statusImportedPdf",
-                status: "success",
-                linkUrl: notebookUrl,
-                showDownload: true
-            });
-        }
-    }
-
-    const formatLabels = { pdf: "PDF", md: "Markdown", url: "URL", screenshot: "Screenshot", direct: "Import direct" };
-    browser.notifications.create({
-        type: "basic",
-        iconUrl: browser.runtime.getURL("icons/icon.svg"),
-        title: browser.i18n.getMessage("extensionName"),
-        message: browser.i18n.getMessage("notifSuccessMsg").replace("{title}", cleanTitle).replace("{format}", formatLabels[format] || format)
-    });
-}
+// ----------------------------------------------------------
+// DÉTECTION DU FORMAT DE FICHIER
+// ----------------------------------------------------------
 
 /**
- * Upload générique d'un Blob (fichier binaire) vers NotebookLM.
- * Réutilise le protocole resumable 3 étapes (o4cbdc → start → upload+finalize).
+ * Analyse l'onglet actif pour déterminer s'il contient un fichier supporté.
+ * Étape 1 : parse l'extension depuis l'URL → MIME_MAP
+ * Étape 2 : HEAD request fallback si aucune extension reconnue
+ * Ne télécharge jamais le corps du fichier.
  *
- * @param {string} notebookId - ID du carnet cible.
- * @param {Blob} blob - Blob binaire du fichier.
- * @param {string} filename - Nom du fichier avec extension.
- * @param {number} authuserIndex - Index du compte Google actif.
+ * @param {Object} tab — objet tab Firefox { url, title }
+ * @returns {Promise<Object>} { supported, fileName, mimeType, reason? }
  */
-async function uploadFileBlob(notebookId, blob, filename, authuserIndex = 0) {
+async function detectFileFromTab(tab) {
+  const url = tab.url || "";
+  const title = tab.title || "";
 
-    const data = await browser.storage.local.get(['nblm_personal_cookie', 'nblm_csrf']);
-    if (!data.nblm_personal_cookie || !data.nblm_csrf) {
-        throw new Error("Authentification personnelle non finalisée.");
+  // Blocage fichiers locaux — définitif
+  if (url.startsWith("file://")) {
+    return { supported: false, reason: "local_file" };
+  }
+
+  // Blocage pages système (about:, moz-extension:, etc.)
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return { supported: false, reason: "system_page" };
+  }
+
+  // --- Étape 1 : extension dans l'URL ---
+  try {
+    const pathname = new URL(url).pathname;
+    const lastSegment = pathname.split("/").pop();
+    const dotIndex = lastSegment.lastIndexOf(".");
+    if (dotIndex > 0) {
+      const ext = lastSegment.substring(dotIndex + 1).toLowerCase();
+      if (MIME_MAP[ext]) {
+        const fileName = getFileNameFromUrl(url, title);
+        return { supported: true, fileName, mimeType: MIME_MAP[ext] };
+      }
     }
+  } catch (e) {
+    // URL invalide — continuer vers HEAD fallback
+  }
 
-    const { sendBatchExecute } = await import('./api/rpc_client.js');
-    const registerRpcId = "o4cbdc";
-    const registerParams = [
-        [[filename]],
-        notebookId,
-        [2],
-        [1, null, null, null, null, null, null, null, null, null, [1]]
-    ];
-
-    const registerResult = await sendBatchExecute(registerRpcId, registerParams, authuserIndex);
-
-    const sourceId = extractFirstStringFromResult(registerResult);
-    if (!sourceId) {
-        throw new Error("Échec enregistrement source: impossible d'obtenir SOURCE_ID.");
+  // --- Étape 2 : HEAD request fallback ---
+  try {
+    const headRes = await fetch(url, { method: "HEAD" });
+    if (headRes.ok) {
+      const contentType = (headRes.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
+      if (contentType && MIME_TO_EXT[contentType]) {
+        const ext = MIME_TO_EXT[contentType];
+        let fileName = getFileNameFromUrl(url, title);
+        // S'assurer que le nom a une extension
+        if (!fileName.includes(".")) {
+          fileName = fileName + "." + ext;
+        }
+        return { supported: true, fileName, mimeType: contentType };
+      }
     }
+  } catch (e) {
+    // Erreur réseau sur HEAD — on considère non supporté
+  }
 
-    const uploadStartUrl = `https://notebooklm.google.com/upload/_/?authuser=${authuserIndex}`;
-    const startBody = JSON.stringify({
-        "PROJECT_ID": notebookId,
-        "SOURCE_NAME": filename,
-        "SOURCE_ID": sourceId
-    });
+  return { supported: false, reason: "unsupported_type" };
+}
 
-    const startResponse = await fetch(uploadStartUrl, {
-        method: 'POST',
-        headers: {
-            'Accept': '*/*',
-            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-            'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebooklm.google.com',
-            'Referer': 'https://notebooklm.google.com/',
-            'x-goog-authuser': String(authuserIndex),
-            'x-goog-upload-command': 'start',
-            'x-goog-upload-header-content-length': String(blob.size),
-            'x-goog-upload-protocol': 'resumable'
-        },
-        body: startBody
-    });
+// ----------------------------------------------------------
+// GESTION DU DOSSIER DRIVE
+// ----------------------------------------------------------
 
-    if (!startResponse.ok) {
-        throw new Error(`Échec démarrage upload: HTTP ${startResponse.status}`);
-    }
+/**
+ * Recherche le dossier "Imports Magic Clipper" dans Drive.
+ * Prend le plus récent si plusieurs existent (orderBy=createdTime desc).
+ * @returns {Promise<string|null>} L'ID du dossier ou null
+ */
+async function findFolder(token) {
+  const q = `name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const url =
+    "https://www.googleapis.com/drive/v3/files" +
+    "?q=" + encodeURIComponent(q) +
+    "&orderBy=createdTime+desc" +
+    "&fields=files(id,name)";
 
-    const uploadUrl = startResponse.headers.get('x-goog-upload-url');
-    if (!uploadUrl) {
-        throw new Error("Échec: pas de x-goog-upload-url dans la réponse serveur.");
-    }
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-    const finalizeResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-            'Accept': '*/*',
-            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-            'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebooklm.google.com',
-            'Referer': 'https://notebooklm.google.com/',
-            'x-goog-authuser': String(authuserIndex),
-            'x-goog-upload-command': 'upload, finalize',
-            'x-goog-upload-offset': '0'
-        },
-        body: blob
-    });
+  if (!res.ok) {
+    throw new Error(`Recherche dossier Drive échouée (HTTP ${res.status})`);
+  }
 
-    if (!finalizeResponse.ok) {
-        throw new Error(`Échec upload fichier: HTTP ${finalizeResponse.status}`);
-    }
-
-    console.log(`[NotebookLM RPC] ✅ Fichier uploadé (${Math.round(blob.size / 1024)} Ko).`);
-    return true;
+  const data = await res.json();
+  return data.files?.[0]?.id ?? null;
 }
 
 /**
- * Utilitaire : extraire la première string d'une structure imbriquée
+ * Crée le dossier "Imports Magic Clipper" à la racine du Drive.
+ * @returns {Promise<string>} L'ID du dossier créé
  */
-function extractFirstStringFromResult(data) {
-    if (typeof data === 'string') return data;
-    if (Array.isArray(data) && data.length > 0) {
-        return extractFirstStringFromResult(data[0]);
-    }
-    return null;
+async function createFolder(token) {
+  const res = await fetch("https://www.googleapis.com/drive/v3/files", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: FOLDER_NAME,
+      mimeType: "application/vnd.google-apps.folder"
+    })
+  });
+
+  const data = await res.json();
+  if (!data.id) {
+    throw new Error("Création du dossier Drive échouée.");
+  }
+  await browser.storage.local.set({ folderId: data.id });
+  return data.id;
 }
+
+/**
+ * Orchestrateur : cache → findFolder → createFolder.
+ */
+async function getOrCreateFolder(token) {
+  // Vérifier le cache d'abord
+  const { folderId } = await browser.storage.local.get("folderId");
+  if (folderId) return folderId;
+
+  // Rechercher en ligne
+  const found = await findFolder(token);
+  if (found) {
+    await browser.storage.local.set({ folderId: found });
+    return found;
+  }
+
+  // Créer uniquement si introuvable
+  return createFolder(token);
+}
+
+// ----------------------------------------------------------
+// UPLOAD FICHIER — MULTIPART (≤ 5 Mo)
+// ----------------------------------------------------------
+
+/**
+ * Télécharge le fichier depuis l'URL puis l'upload en multipart vers Drive.
+ *
+ * @param {string} url       — URL du fichier à télécharger
+ * @param {string} fileName  — Nom du fichier dans Drive
+ * @param {string} mimeType  — Type MIME du fichier
+ * @param {string} token     — Token OAuth2
+ * @param {string} folderId  — ID du dossier parent Drive
+ * @returns {Promise<{id, name, webViewLink}>}
+ */
+async function uploadFile(url, fileName, mimeType, token, folderId) {
+  // Téléchargement du fichier depuis l'URL de l'onglet
+  const fileResponse = await fetch(url);
+  if (!fileResponse.ok) {
+    throw new Error(`HTTP_${fileResponse.status}`);
+  }
+  const fileBlob = await fileResponse.blob();
+
+  // Metadata Drive
+  const metadata = {
+    name: fileName,
+    mimeType: mimeType,
+    parents: [folderId]
+  };
+
+  // Corps multipart
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", fileBlob);
+
+  // Upload
+  const uploadRes = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form
+    }
+  );
+
+  if (!uploadRes.ok) {
+    const status = uploadRes.status;
+    if (status === 401) throw new Error("RETRY_401");
+    if (status === 404) throw new Error("RETRY_404");
+    if (status === 403) throw new Error("QUOTA_EXCEEDED");
+    const err = await uploadRes.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP_${status}`);
+  }
+
+  return uploadRes.json();
+}
+
+// ----------------------------------------------------------
+// UPLOAD AVEC RETRY (401 token expiré, 404 dossier supprimé)
+// ----------------------------------------------------------
+
+/**
+ * Enveloppe uploadFile avec retry automatique unique.
+ */
+async function uploadWithRetry(url, fileName, mimeType) {
+  let token = await getValidToken();
+  let folderId = await getOrCreateFolder(token);
+
+  try {
+    return await uploadFile(url, fileName, mimeType, token, folderId);
+  } catch (err) {
+    // Retry unique sur token expiré
+    if (err.message === "RETRY_401") {
+      await browser.storage.local.remove(["accessToken", "expiresAt"]);
+      token = await getValidToken();
+      return await uploadFile(url, fileName, mimeType, token, folderId);
+    }
+    // Retry unique sur dossier supprimé
+    if (err.message === "RETRY_404") {
+      await browser.storage.local.remove("folderId");
+      folderId = await getOrCreateFolder(token);
+      return await uploadFile(url, fileName, mimeType, token, folderId);
+    }
+    throw err;
+  }
+}
+
+// ----------------------------------------------------------
+// DÉCONNEXION
+// ----------------------------------------------------------
+
+/**
+ * Révoque le token côté Google et purge le stockage local.
+ */
+async function disconnect() {
+  const { accessToken } = await browser.storage.local.get("accessToken");
+  if (accessToken) {
+    // Révocation best-effort — ne pas bloquer sur l'erreur
+    await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${accessToken}`).catch(() => {});
+  }
+  await browser.storage.local.remove(["accessToken", "expiresAt", "folderId"]);
+}
+
+// ----------------------------------------------------------
+// ROUTEUR DE MESSAGES — handleMessage
+// ----------------------------------------------------------
+
+/**
+ * Traite un message provenant de la popup.
+ * @param {Object} message — { action, ... }
+ * @returns {Promise<Object>} Réponse à sendResponse
+ */
+async function handleMessage(message) {
+  switch (message.action) {
+
+    case "getRedirectURL":
+      return { url: browser.identity.getRedirectURL() };
+
+    case "getTabStatus": {
+      try {
+        const tabs = await browser.tabs.query({ currentWindow: true, active: true });
+        const tab = tabs[0];
+        if (!tab || !tab.url) {
+          return { supported: false, reason: "system_page" };
+        }
+        return await detectFileFromTab(tab);
+      } catch (e) {
+        return { supported: false, reason: "system_page" };
+      }
+    }
+
+    case "uploadCurrentFile": {
+      try {
+        // Récupère l'onglet actif
+        const tabs = await browser.tabs.query({ currentWindow: true, active: true });
+        const tab = tabs[0];
+
+        // Détection du format
+        const detection = await detectFileFromTab(tab);
+        if (!detection.supported) {
+          const errorKey = detection.reason === "local_file" ? "err_local_file" : "err_unsupported_type";
+          return { success: false, error: t(errorKey) };
+        }
+
+        // Upload avec retry automatique
+        const result = await uploadWithRetry(tab.url, detection.fileName, detection.mimeType);
+
+        return { success: true, fileName: result.name, link: result.webViewLink };
+      } catch (e) {
+        // Messages d'erreur i18n selon le type
+        if (e.message === "QUOTA_EXCEEDED") {
+          return { success: false, error: t("err_quota") };
+        }
+        if (e.message?.startsWith("HTTP_")) {
+          const status = e.message.replace("HTTP_", "");
+          return { success: false, error: t("err_download_failed", { STATUS: status }) };
+        }
+        if (e.message?.includes("auth") || e.message?.includes("identity")) {
+          return { success: false, error: t("err_auth_failed") };
+        }
+        // Erreur réseau (fetch échoue sans status)
+        if (e.name === "TypeError" && e.message?.includes("fetch")) {
+          return { success: false, error: t("err_network") };
+        }
+        return { success: false, error: t("err_upload_failed") };
+      }
+    }
+
+    case "disconnect":
+      await disconnect();
+      return { success: true };
+
+    default:
+      return { success: false, error: "Unknown action" };
+  }
+}
+
+// ----------------------------------------------------------
+// LISTENER onMessage — FORME ROBUSTE avec return true
+// ----------------------------------------------------------
+
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  (async () => {
+    const result = await handleMessage(message);
+    sendResponse(result);
+  })();
+  return true; // ← OBLIGATOIRE — maintient le canal ouvert
+});

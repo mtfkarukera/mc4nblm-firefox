@@ -1,353 +1,39 @@
 {
-  "extensionName": {
-    "message": "Magic Clipper cho NotebookLM",
-    "description": "Extension name displayed in Firefox about:addons"
-  },
-  "extensionDescription": {
-    "message": "Chụp, dọn dẹp và nhập ngay lập tức bất kỳ trang web nào vào Google NotebookLM với độ chính xác kỳ diệu.",
-    "description": "Extension description displayed in Firefox about:addons"
-  },
-  "popupTitleCapture": {
-    "message": "Chụp trang này",
-    "description": "Main popup heading"
-  },
-  "popupLabelSelectNotebook": {
-    "message": "Chọn một sổ tay",
-    "description": "Label for notebook selection"
-  },
-  "popupPlaceholderSearchNotebook": {
-    "message": "Tìm kiếm sổ tay...",
-    "description": "Placeholder for Fast Research input"
-  },
-  "popupLabelLocale": {
-    "message": "Ngôn ngữ",
-    "description": "Label for the language selector"
-  },
-  "btnPdf": {
-    "message": "PDF",
-    "description": "Button label — export as PDF"
-  },
-  "btnPdfAriaLabel": {
-    "message": "Xuất trang dưới dạng PDF và nhập vào NotebookLM",
-    "description": "Accessible label for the PDF button"
-  },
-  "btnMarkdown": {
-    "message": "Markdown",
-    "description": "Button label — export as Markdown"
-  },
-  "btnMarkdownAriaLabel": {
-    "message": "Xuất trang dưới dạng Markdown và nhập vào NotebookLM",
-    "description": "Accessible label for the Markdown button"
-  },
-  "btnUrl": {
-    "message": "URL",
-    "description": "Button label — send URL"
-  },
-  "btnUrlAriaLabel": {
-    "message": "Gửi URL trực tiếp đến NotebookLM",
-    "description": "Accessible label for the URL button"
-  },
-  "btnScreenshot": {
-    "message": "Ảnh chụp màn hình",
-    "description": "Button label — capture screenshot"
-  },
-  "btnScreenshotAriaLabel": {
-    "message": "Chụp ảnh màn hình và nhập vào NotebookLM",
-    "description": "Accessible label for the Screenshot button"
-  },
-  "btnDirect": {
-    "message": "Nhập trực tiếp",
-    "description": "Button label — direct import"
-  },
-  "btnDirectAriaLabel": {
-    "message": "Nhập trực tiếp tệp vào NotebookLM",
-    "description": "Accessible label for the Direct Import button"
-  },
-  "btnDrive": {
-    "message": "Google Drive",
-    "description": "Button label — Google Drive"
-  },
-  "btnDriveAriaLabel": {
-    "message": "Nhập từ Google Drive",
-    "description": "Accessible label for the Google Drive button"
-  },
-  "intentNoteLabelVisible": {
-    "message": "Mục đích tìm kiếm (tùy chọn)",
-    "description": "Label for the intent note field"
-  },
-  "intentNotePlaceholder": {
-    "message": "Tùy chọn: mô tả mục đích tìm kiếm của bạn...",
-    "description": "Placeholder text for the intent note textarea"
-  },
-  "statusCapturing": {
-    "message": "Đang chụp…",
-    "description": "Status message when capturing begins"
-  },
-  "statusUploading": {
-    "message": "Đang tải lên… ($PERCENT$%)",
-    "description": "Upload progress message with substitution",
+  "ext_name": { "message": "Magic Clipper cho Google Drive", "description": "Extension name" },
+  "ext_description": { "message": "Gửi bất kỳ tệp nào Firefox có thể hiển thị trực tiếp vào Google Drive của bạn chỉ bằng một cú nhấp chuột.", "description": "Extension description" },
+  "popup_auth_loading": { "message": "Đang kết nối…", "description": "Auth status: loading" },
+  "popup_auth_connected": { "message": "Đã kết nối", "description": "Auth status: connected" },
+  "popup_auth_error": { "message": "Chưa kết nối", "description": "Auth status: error" },
+  "popup_detecting": { "message": "Đang phân tích thẻ…", "description": "Status when analyzing the current tab" },
+  "popup_idle_label": { "message": "ĐÃ PHÁT HIỆN TỆP", "description": "Label above the detected file" },
+  "popup_no_file": { "message": "Không phát hiện tệp nào", "description": "Message when no file is detected" },
+  "popup_unsupported": { "message": "Thẻ này không chứa tệp được hỗ trợ", "description": "Message when the file type is not supported" },
+  "popup_local_file": { "message": "Tệp cục bộ không được hỗ trợ", "description": "Message when a local file is detected" },
+  "popup_btn_upload": { "message": "⬆️ Gửi lên Google Drive", "description": "Upload button text" },
+  "popup_btn_uploading": { "message": "Đang gửi…", "description": "Upload button text when sending" },
+  "popup_btn_disconnect": { "message": "Ngắt kết nối", "description": "Disconnect button text" },
+  "popup_confirm_disconnect": { "message": "Ngắt kết nối tài khoản Google của bạn khỏi tiện ích mở rộng này?", "description": "Disconnect confirmation message" },
+  "popup_btn_disconnect_confirm": { "message": "Xác nhận ngắt kết nối", "description": "Disconnect button confirmation state" },
+  "popup_uploading_label": { "message": "Đang tải lên…", "description": "Label during upload" },
+  "popup_link_view": { "message": "📂 Xem trong Google Drive", "description": "Link to view the uploaded file" },
+  "popup_success": {
+    "message": "Đã gửi $FILE_NAME$!",
+    "description": "Thông báo thành công với tên tệp",
     "placeholders": {
-      "PERCENT": {
-        "content": "$1",
-        "example": "42"
-      }
+      "file_name": { "content": "$1" }
     }
   },
-  "statusSuccess": {
-    "message": "Nhập thành công ✓",
-    "description": "Status message on success"
-  },
-  "statusProcessing": {
-    "message": "Đang xử lý…",
-    "description": "Status message during processing"
-  },
-  "errorApiChanged": {
-    "message": "API NotebookLM đã bị thay đổi. Cần phải cập nhật.",
-    "description": "User-facing error when API structure is modified"
-  },
-  "errorAuthExpired": {
-    "message": "Phiên đã hết hạn. Vui lòng đăng nhập lại vào NotebookLM.",
-    "description": "User-facing error on 401/403"
-  },
-  "errorUploadSessionMissing": {
-    "message": "Lỗi trong quá trình khởi tạo tải lên.",
-    "description": "User-facing error when upload URL is missing"
-  },
-  "errorTimeout": {
-    "message": "Yêu cầu đã hết thời gian chờ. Vui lòng kiểm tra kết nối của bạn.",
-    "description": "User-facing error for timeouts"
-  },
-  "errorInjectionFailed": {
-    "message": "Không thể kích hoạt clipper trên trang bị hạn chế này.",
-    "description": "User-facing error when script injection fails"
-  },
-  "errorUnknown": {
-    "message": "Đã xảy ra lỗi không xác định. Vui lòng kiểm tra bảng điều khiển.",
-    "description": "User-facing error for uncategorized errors"
-  },
-  "menuContextImportSelection": {
-    "message": "Nhập phần đã chọn vào NotebookLM",
-    "description": "Context menu item to import selected text"
-  },
-  "popupLabelFormat": {
-    "message": "Định dạng"
-  },
-  "popupStatusReady": {
-    "message": "Sẵn sàng"
-  },
-  "btnClose": {
-    "message": "✖ Đóng"
-  },
-  "linkOpenNotebook": {
-    "message": "Mở sổ tay →"
-  },
-  "linkDownloadFile": {
-    "message": "Tải {ext} ↓"
-  },
-  "linkDownloading": {
-    "message": "Đang tải..."
-  },
-  "linkDownloaded": {
-    "message": "✅ Đã tải"
-  },
-  "statusConnected": {
-    "message": "Đã kết nối ({type})"
-  },
-  "statusDisconnected": {
-    "message": "Đã ngắt kết nối"
-  },
-  "errAuth": {
-    "message": "Lỗi xác thực."
-  },
-  "loadingNotebooks": {
-    "message": "Đang tải sổ tay..."
-  },
-  "errLoadNotebooks": {
-    "message": "Lỗi khi tải sổ tay."
-  },
-  "noNotebookFound": {
-    "message": "Không tìm thấy sổ tay nào."
-  },
-  "notebookNotFound": {
-    "message": "Không tìm thấy sổ tay."
-  },
-  "errNoSearchTerm": {
-    "message": "Nhập tên sổ tay vào ô tìm kiếm."
-  },
-  "creatingNotebook": {
-    "message": "Đang tạo sổ tay \"{title}\"..."
-  },
-  "notebookCreated": {
-    "message": "Sổ tay \"{title}\" đã được tạo ✅"
-  },
-  "errCreateNotebook": {
-    "message": "Không thể tạo sổ tay. Vui lòng kiểm tra kết nối và thử lại.",
-    "description": "Lỗi khi tạo sổ tay"
-  },
-  "errGeneric": {
-    "message": "Lỗi: {msg}"
-  },
-  "errNoNotebook": {
-    "message": "Vui lòng chọn một sổ tay trước."
-  },
-  "importingSelection": {
-    "message": "📋 Đang nhập lựa chọn..."
-  },
-  "importingFormat": {
-    "message": "Đang nhập dưới dạng {label}..."
-  },
-  "warnLocalFile": {
-    "message": "⚠️ Tệp cục bộ — nhập trực tiếp không khả dụng."
-  },
-  "errDownload": {
-    "message": "❌ Lỗi"
-  },
-  "errGenericOccurred": {
-    "message": "Đã xảy ra lỗi."
-  },
-  "apiChanged": {
-    "message": "API NotebookLM đã được Google cập nhật. Cần cập nhật tiện ích mở rộng."
-  },
-  "sessionExpired": {
-    "message": "Phiên đã hết hạn. Vui lòng đăng nhập lại tại notebooklm.google.com."
-  },
-  "uploadSessionFailed": {
-    "message": "Tải lên thất bại: không thể bắt đầu phiên tải lên."
-  },
-  "timeout": {
-    "message": "Hết thời gian chờ. Kiểm tra kết nối và thử lại."
-  },
-  "unexpectedError": {
-    "message": "Đã xảy ra lỗi không mong đợi. Kiểm tra bảng điều khiển để biết chi tiết."
-  },
-  "errFileReader": {
-    "message": "Đọc tệp thất bại."
-  },
-  "errNoCapture": {
-    "message": "Không có ảnh chụp nào."
-  },
-  "statusCreatingNb": {
-    "message": "Đang tạo sổ tay..."
-  },
-  "statusUploadSelection": {
-    "message": "📋 Đang tải lên lựa chọn..."
-  },
-  "statusImportedSelection": {
-    "message": "✅ Đã nhập lựa chọn!"
-  },
-  "notifSelectionTitle": {
-    "message": "📎 Clip lựa chọn vào NotebookLM"
-  },
-  "notifSelectionCaptured": {
-    "message": "Đã chụp lựa chọn ✓"
-  },
-  "notifSelectionMsg": {
-    "message": "Nhấp vào nút NotebookLM Web Clipper để chọn sổ tay."
-  },
-  "notifSuccessMsg": {
-    "message": "Đã thêm \"{title}\" dưới dạng {format} thành công!"
-  },
-  "statusFetchSession": {
-    "message": "Đang lấy phiên cá nhân..."
-  },
-  "statusScreenshot": {
-    "message": "📸 Đang chụp viewport..."
-  },
-  "statusUploadScreenshot": {
-    "message": "📸 Đang tải lên ảnh chụp màn hình..."
-  },
-  "statusImportedScreenshot": {
-    "message": "✅ Đã nhập ảnh chụp màn hình!"
-  },
-  "statusDownloadFile": {
-    "message": "⚡ Đang tải xuống tệp..."
-  },
-  "statusUploadFile": {
-    "message": "⚡ Đang tải lên {ext}..."
-  },
-  "statusImportedFile": {
-    "message": "✅ Đã nhập tệp trực tiếp!"
-  },
-  "statusDrive": {
-    "message": "☁️ Đang kết nối với Google Drive..."
-  },
-  "statusImportedDrive": {
-    "message": "✅ Đã đồng bộ tài liệu Google Drive!"
-  },
-  "statusYoutube": {
-    "message": "Phát hiện YouTube → nhập gốc..."
-  },
-  "statusSendUrl": {
-    "message": "Đang gửi URL đến NotebookLM..."
-  },
-  "statusImportedYoutube": {
-    "message": "✅ Đã nhập video YouTube!"
-  },
-  "statusImportedUrl": {
-    "message": "✅ Đã nhập URL!"
-  },
-  "statusDomCapture": {
-    "message": "Đang yêu cầu chụp DOM..."
-  },
-  "statusSendMarkdown": {
-    "message": "Đang gửi Markdown (nguồn văn bản)..."
-  },
-  "statusImportedMarkdown": {
-    "message": "✅ Đã nhập Markdown!"
-  },
-  "statusCheckQuota": {
-    "message": "Đang kiểm tra hạn mức bảo mật..."
-  },
-  "statusSendPdf": {
-    "message": "Đang gửi PDF (Máy chủ Google)..."
-  },
-  "statusImportedPdf": {
-    "message": "✅ Đã nhập PDF!"
-  },
-  "errGetNotebooks": {
-    "message": "Không thể lấy danh sách sổ tay. Vui lòng kiểm tra kết nối và tải lại.",
-    "description": "Lỗi khi lấy danh sách sổ tay"
-  },
-  "errSelectionFailed": {
-    "message": "Không thể nhập phần đã chọn. Vui lòng thử lại.",
-    "description": "Lỗi khi nhập nội dung đã chọn"
-  },
-  "errWorkflowFailed": {
-    "message": "Đã xảy ra lỗi trong quá trình nhập. Vui lòng kiểm tra bảng điều khiển.",
-    "description": "Lỗi quy trình nhập tổng quát"
-  },
-  "errInjectionFailed": {
-    "message": "Không thể kích hoạt clipper trên trang này (trang hệ thống hoặc bị hạn chế).",
-    "description": "Lỗi khi tiêm script trên trang bị hạn chế"
-  },
-  "popupTitleAccountSwitcher": {
-    "message": "Chuyển đổi tài khoản Google"
-  },
-  "statusConnecting": {
-    "message": "Đang kết nối..."
-  },
-  "btnCreateNotebookTitle": {
-    "message": "Tạo sổ tay mới"
-  },
-  "btnPdfTitle": {
-    "message": "Hình ảnh nhúng, bố cục trực quan"
-  },
-  "btnMarkdownTitle": {
-    "message": "Bảng hoàn hảo, siêu nhẹ, nguyên bản cho Gemini"
-  },
-  "btnUrlTitle": {
-    "message": "Nhập ngay lập tức — NotebookLM trích xuất trang"
-  },
-  "btnScreenshotTitle": {
-    "message": "Chụp vùng nhìn thấy được dưới dạng PNG"
-  },
-  "btnDriveTitle": {
-    "message": "Đồng bộ hóa Google Drive gốc"
-  },
-  "btnDirectTitle": {
-    "message": "Nhập tệp gốc nguyên bản"
-  },
-  "btnClearSelectionTitle": {
-    "message": "Hủy"
-  }
+  "err_local_file": { "message": "Tệp cục bộ không được hỗ trợ. Mở tệp từ một URL trực tuyến.", "description": "Error: local file" },
+  "err_unsupported_type": { "message": "Loại tệp không được hỗ trợ.", "description": "Error: unsupported file type" },
+  "err_quota": { "message": "Không đủ không gian lưu trữ Google Drive.", "description": "Error: out of quota" },
+  "err_download_failed": {
+    "message": "Không thể tải tệp xuống (HTTP $STATUS$).",
+    "description": "Lỗi tải xuống với mã HTTP",
+    "placeholders": {
+      "status": { "content": "$1" }
+    }
+  },
+  "err_auth_failed": { "message": "Xác thực Google không thành công.", "description": "Error: authentication failed" },
+  "err_network": { "message": "Lỗi mạng. Kiểm tra kết nối internet của bạn.", "description": "Error: network issue" },
+  "err_upload_failed": { "message": "Tải lên không thành công. Vui lòng thử lại.", "description": "Error: upload failed" }
 }
