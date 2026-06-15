@@ -149,7 +149,7 @@ Avant d'utiliser l'extension, **chaque compte Google** que vous souhaitez utilis
 
 ```bash
 npm install -g web-ext
-cd notebooklm-magic-clipper
+cd mc4nblm-firefox
 web-ext run
 ```
 
@@ -169,7 +169,7 @@ npm install -g web-ext
 ## 📁 Structure du projet
 
 ```text
-notebooklm-magic-clipper/
+mc4nblm-firefox/
 ├── manifest.json                   # Manifest V3 Firefox (Event Page)
 ├── _locales/                       # Traductions i18n natives et hybrides
 │   ├── en/, fr/, de/, es/, vi/     # Langues natives
