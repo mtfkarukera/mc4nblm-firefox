@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
 
 let ignoreFiles = [];
@@ -16,5 +16,6 @@ try {
 }
 
 module.exports = {
+  artifactsDir: 'dist',
   ignoreFiles: ignoreFiles
 };

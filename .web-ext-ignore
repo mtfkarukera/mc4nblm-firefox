@@ -14,9 +14,10 @@ tools/
 # Configuration de build
 web-ext-config.cjs
 .web-ext-ignore
+build.sh
 
-# Dossiers vides ou artefacts
+# Dossiers de build
 dist/
-web-ext-artifacts/
 artifacts/
 *.zip
+*.xpi
