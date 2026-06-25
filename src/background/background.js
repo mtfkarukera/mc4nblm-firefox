@@ -528,7 +528,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Téléchargement local de la dernière capture (PDF ou Markdown)
     if (message.action === "DOWNLOAD_CAPTURE") {
         if (!lastCaptureData) {
-            sendResponse({ error: "Aucune capture disponible" });
+            sendResponse({ error: browser.i18n.getMessage('errNoCapture') });
             return true;
         }
         (async () => {
@@ -616,21 +616,21 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let finalNotebookId = message.notebookId;
                     if (finalNotebookId === "CREATE_NEW") {
                         notifyUI("STATUS_UPDATE", { i18nKey: "statusCreatingNb", status: "info" });
-                        const title = `Capture - ${new Date().toLocaleDateString()}`;
+                        const title = browser.i18n.getMessage('autoNotebookTitle').replace('{date}', new Date().toLocaleDateString());
                         finalNotebookId = await createPersonalNotebook(title, activeIndex);
                     }
                     if (!finalNotebookId) throw new Error("Échec de la récupération de l'ID du carnet.");
 
                     notifyUI("STATUS_UPDATE", { i18nKey: "statusUploadSelection", status: "info" });
 
-                    const cleanTitle = (sel.pageTitle || 'Sélection')
+                    const cleanTitle = (sel.pageTitle || browser.i18n.getMessage('selectionFallbackTitle'))
                         .replace(/[<>:"/\\|?*]/g, '').trim().substring(0, 80);
                     const sourceTitle = `📋 ${cleanTitle}`;
 
                     const content = [
-                        `Source: ${sel.pageUrl}`,
-                        `Titre: ${sel.pageTitle}`,
-                        `Date de capture: ${new Date().toLocaleString()}`,
+                        `${browser.i18n.getMessage('labelSource')} ${sel.pageUrl}`,
+                        `${browser.i18n.getMessage('labelTitle')} ${sel.pageTitle}`,
+                        `${browser.i18n.getMessage('labelCaptureDate')} ${new Date().toLocaleString()}`,
                         '',
                         '---',
                         '',
@@ -641,9 +641,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                     // Générer le .md de la sélection pour téléchargement local
                     const mdContent = [
-                      `Source: ${sel.pageUrl}`,
-                      `Titre: ${sel.pageTitle}`,
-                      `Date de capture: ${new Date().toLocaleString()}`,
+                      `${browser.i18n.getMessage('labelSource')} ${sel.pageUrl}`,
+                      `${browser.i18n.getMessage('labelTitle')} ${sel.pageTitle}`,
+                      `${browser.i18n.getMessage('labelCaptureDate')} ${new Date().toLocaleString()}`,
                       '',
                       '---',
                       '',
@@ -666,7 +666,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         type: "basic",
                         iconUrl: browser.runtime.getURL("icons/icon.svg"),
                         title: browser.i18n.getMessage("extensionName"),
-                        message: browser.i18n.getMessage("notifSuccessMsg").replace("{title}", cleanTitle).replace("{format}", "Sélection")
+                        message: browser.i18n.getMessage("notifSuccessMsg").replace("{title}", cleanTitle).replace("{format}", browser.i18n.getMessage('selectionFallbackTitle'))
                     });
                 } catch (err) {
                     console.error('[MC] Pipeline SELECTION:', sanitizeErrorMessage(err.message));
@@ -770,7 +770,7 @@ async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentN
     let finalNotebookId = targetNotebookId;
     if (finalNotebookId === "CREATE_NEW") {
         notifyUI("STATUS_UPDATE", { i18nKey: "statusCreatingNb", status: "info" });
-        const title = `Capture - ${new Date().toLocaleDateString()}`;
+        const title = browser.i18n.getMessage('autoNotebookTitle').replace('{date}', new Date().toLocaleDateString());
         finalNotebookId = await createPersonalNotebook(title, activeIndex);
     }
     if (!finalNotebookId) throw new Error("Échec de la récupération de l'ID du carnet.");
@@ -901,7 +901,15 @@ async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentN
         const response = await browser.tabs.sendMessage(activeTab.id, {
             action: "CAPTURE_CONTENT",
             format: format,
-            intentNote: intentNote ?? null
+            intentNote: intentNote ?? null,
+            i18nLabels: {
+                untitledDocument: browser.i18n.getMessage('metaUntitledDocument'),
+                captureHeader: browser.i18n.getMessage('metaCaptureHeader'),
+                authorPrefix: browser.i18n.getMessage('metaAuthorPrefix'),
+                sitePrefix: browser.i18n.getMessage('metaSitePrefix'),
+                datePrefix: browser.i18n.getMessage('metaDatePrefix'),
+                intentHeader: browser.i18n.getMessage('intentHeader')
+            }
         });
         if (response?.status !== "SUCCESS") throw new Error("Erreur Content Script : " + response?.error);
 
@@ -944,7 +952,7 @@ async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentN
         }
     }
 
-    const formatLabels = { pdf: "PDF", md: "Markdown", url: "URL", screenshot: "Screenshot", direct: "Import direct" };
+    const formatLabels = { pdf: "PDF", md: "Markdown", url: "URL", screenshot: "Screenshot", direct: browser.i18n.getMessage('formatLabelDirect') };
     browser.notifications.create({
         type: "basic",
         iconUrl: browser.runtime.getURL("icons/icon.svg"),

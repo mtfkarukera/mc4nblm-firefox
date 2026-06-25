@@ -58,6 +58,18 @@ function setPlaceholder(container, text, style) {
   container.replaceChildren(div);
 }
 
+/** Adds 'btn-disabled' class and syncs aria-disabled for accessibility. */
+function setFormatBtnDisabled(btn) {
+  btn.classList.add('btn-disabled');
+  btn.setAttribute('aria-disabled', 'true');
+}
+
+/** Removes 'btn-disabled' class and syncs aria-disabled for accessibility. */
+function removeFormatBtnDisabled(btn) {
+  btn.classList.remove('btn-disabled');
+  btn.removeAttribute('aria-disabled');
+}
+
 /** Applique les traductions i18n sur tous les éléments DOM portant data-i18n*. */
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -72,6 +84,10 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.dataset.i18nTitle);
   });
+
+  // Update document language attribute
+  const resolvedLocale = document.getElementById('locale-selector').value === 'gcf' ? 'gcf' : (navigator.language || 'en').split('-')[0];
+  document.documentElement.lang = resolvedLocale;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -133,6 +149,14 @@ document.addEventListener('DOMContentLoaded', async () => {
    uiSearchInput.addEventListener('input', debounce((e) => {
      filterNotebooks(e.target.value);
    }, 300));
+
+   uiSearchInput.addEventListener('keydown', (e) => {
+     if (e.key === 'ArrowDown') {
+       e.preventDefault();
+       const firstItem = uiNotebookList.querySelector('[role="option"]');
+       if (firstItem) firstItem.focus();
+     }
+   });
    
    btnCapture.addEventListener('click', startCaptureProcess);
    
@@ -150,14 +174,21 @@ document.addEventListener('DOMContentLoaded', async () => {
        pendingSelection = null;
        uiSelectionBanner.classList.add('hidden');
        // Réactiver les boutons qui étaient grisés par la sélection
-       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => b.classList.remove('btn-disabled'));
+       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => removeFormatBtnDisabled(b));
      }
 
      // Désélectionner tous les boutons (format toggle + direct)
-     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
-     if (btnDirectImport) btnDirectImport.classList.remove('active');
+     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+       b.classList.remove('active');
+       b.setAttribute('aria-pressed', 'false');
+     });
+     if (btnDirectImport) {
+       btnDirectImport.classList.remove('active');
+       btnDirectImport.setAttribute('aria-pressed', 'false');
+     }
      
      btn.classList.add('active');
+     btn.setAttribute('aria-pressed', 'true');
      currentFormat = btn.dataset.format;
      updateCaptureButtonLabel();
    });
@@ -168,8 +199,12 @@ document.addEventListener('DOMContentLoaded', async () => {
        if (btnDirectImport.classList.contains('active')) return;
        
        // Désélectionner les boutons du toggle principal
-       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+         b.classList.remove('active');
+         b.setAttribute('aria-pressed', 'false');
+       });
        btnDirectImport.classList.add('active');
+       btnDirectImport.setAttribute('aria-pressed', 'true');
        currentFormat = 'direct';
        updateCaptureButtonLabel();
      });
@@ -234,16 +269,38 @@ function renderNotebooks(list) {
     list.forEach(nb => {
         const div = document.createElement('div');
         div.className = 'notebook-item';
+        div.setAttribute('role', 'option');
+        div.setAttribute('tabindex', '0');
+        div.setAttribute('aria-selected', 'false');
         if (currentSelectedNotebookId === nb.id) {
            div.classList.add('selected');
+           div.setAttribute('aria-selected', 'true');
         }
         div.textContent = nb.title;
         div.onclick = () => {
-            document.querySelectorAll('.notebook-item').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.notebook-item').forEach(el => {
+              el.classList.remove('selected');
+              el.setAttribute('aria-selected', 'false');
+            });
             div.classList.add('selected');
+            div.setAttribute('aria-selected', 'true');
             currentSelectedNotebookId = nb.id;
             btnCapture.disabled = false;
         };
+        div.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            div.click();
+          }
+          if (e.key === 'ArrowDown' && div.nextElementSibling) {
+            e.preventDefault();
+            div.nextElementSibling.focus();
+          }
+          if (e.key === 'ArrowUp' && div.previousElementSibling) {
+            e.preventDefault();
+            div.previousElementSibling.focus();
+          }
+        });
         uiNotebookList.appendChild(div);
     });
 }
@@ -339,7 +396,7 @@ function startCaptureProcess() {
    uiSearchInput.disabled = true;
    btnCustomSpinner.classList.remove('hidden');
 
-   const formatLabels = { pdf: 'PDF', md: 'Markdown', url: 'URL', screenshot: 'Screenshot', direct: 'Import direct', drive: 'Google Drive' };
+   const formatLabels = { pdf: 'PDF', md: 'Markdown', url: 'URL', screenshot: t('btnScreenshot') || 'Screenshot', direct: t('formatLabelDirect') || 'Direct Import', drive: 'Google Drive' };
    const label = formatLabels[currentFormat] || currentFormat;
    updateStatus(t('importingFormat').replace('{label}', label), "info");
 
@@ -388,17 +445,24 @@ async function detectActiveTabFileType() {
      const screenshotBtn = uiFormatToggle.querySelector('[data-format="screenshot"]');
 
      if (isYouTubeWatch(url)) {
-       pdfBtn.classList.add('btn-disabled');
-       mdBtn.classList.add('btn-disabled');
-       screenshotBtn.classList.add('btn-disabled');
+       setFormatBtnDisabled(pdfBtn);
+       setFormatBtnDisabled(mdBtn);
+       setFormatBtnDisabled(screenshotBtn);
        if (btnDirectImport) {
-         btnDirectImport.classList.add('btn-disabled');
+         setFormatBtnDisabled(btnDirectImport);
        }
 
        if (currentFormat !== 'url') {
-         uiFormatToggle.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
-         if (btnDirectImport) btnDirectImport.classList.remove('active');
-         urlBtn.classList.add('active');
+         uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          if (btnDirectImport) {
+            btnDirectImport.classList.remove('active');
+            btnDirectImport.setAttribute('aria-pressed', 'false');
+          }
+          urlBtn.classList.add('active');
+          urlBtn.setAttribute('aria-pressed', 'true');
          currentFormat = 'url';
          updateCaptureButtonLabel();
        }
@@ -406,9 +470,9 @@ async function detectActiveTabFileType() {
      }
 
      if (hasBinaryExtension(url)) {
-        pdfBtn.classList.add('btn-disabled');
-        mdBtn.classList.add('btn-disabled');
-        screenshotBtn.classList.add('btn-disabled');
+        setFormatBtnDisabled(pdfBtn);
+        setFormatBtnDisabled(mdBtn);
+        setFormatBtnDisabled(screenshotBtn);
 
        const ext = new URL(url).pathname.split('.').pop().toLowerCase();
        const label = ext.toUpperCase();
@@ -420,11 +484,15 @@ async function detectActiveTabFileType() {
        }
 
        if (btnDirectImport) {
-         btnDirectImport.classList.remove('btn-disabled');
-         btnDirectImport.classList.add('active');
+         removeFormatBtnDisabled(btnDirectImport);
+          btnDirectImport.classList.add('active');
+          btnDirectImport.setAttribute('aria-pressed', 'true');
        }
 
-       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+         b.classList.remove('active');
+         b.setAttribute('aria-pressed', 'false');
+       });
 
        currentFormat = 'direct';
        updateCaptureButtonLabel();
@@ -438,9 +506,9 @@ async function detectActiveTabFileType() {
          url
        });
         if (isBinary) {
-          pdfBtn.classList.add('btn-disabled');
-          mdBtn.classList.add('btn-disabled');
-          screenshotBtn.classList.add('btn-disabled');
+          setFormatBtnDisabled(pdfBtn);
+          setFormatBtnDisabled(mdBtn);
+          setFormatBtnDisabled(screenshotBtn);
 
          // Extraire un label lisible depuis le MIME (ex: "audio/mpeg" → "AUDIO")
          const mimeLabel = mime.split('/')[0].toUpperCase();
@@ -451,10 +519,14 @@ async function detectActiveTabFileType() {
            uiDirectImportSection.classList.remove('hidden');
          }
          if (btnDirectImport) {
-           btnDirectImport.classList.remove('btn-disabled');
-           btnDirectImport.classList.add('active');
+           removeFormatBtnDisabled(btnDirectImport);
+            btnDirectImport.classList.add('active');
+            btnDirectImport.setAttribute('aria-pressed', 'true');
          }
-         uiFormatToggle.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+          uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
          currentFormat = 'direct';
          updateCaptureButtonLabel();
          return;
@@ -477,22 +549,25 @@ async function detectActiveTabFileType() {
                      // Fichier hébergé sur Drive → Drive + Screenshot
                      // (Drive pour les docs textuels, Screenshot pour le reste)
                      uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
-                         b.classList.remove('active');
-                         if (['pdf', 'md', 'url'].includes(b.dataset.format)) {
-                             b.style.display = 'none';
-                         }
-                     });
+                          b.classList.remove('active');
+                          b.setAttribute('aria-pressed', 'false');
+                          if (['pdf', 'md', 'url'].includes(b.dataset.format)) {
+                              b.style.display = 'none';
+                          }
+                      });
                  } else {
                      // Google Workspace (Docs/Sheets/Slides) → Drive exclusif
                      uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
-                         b.classList.remove('active');
-                         if (['pdf', 'md', 'url', 'screenshot'].includes(b.dataset.format)) {
-                             b.style.display = 'none';
-                         }
-                     });
+                          b.classList.remove('active');
+                          b.setAttribute('aria-pressed', 'false');
+                          if (['pdf', 'md', 'url', 'screenshot'].includes(b.dataset.format)) {
+                              b.style.display = 'none';
+                          }
+                      });
                  }
 
-                 driveBtn.classList.add("active");
+                  driveBtn.classList.add("active");
+                  driveBtn.setAttribute('aria-pressed', 'true');
                  currentFormat = "drive";
                  updateCaptureButtonLabel();
                  return;
@@ -511,11 +586,12 @@ async function detectActiveTabFileType() {
 
       if (result.isLocal) {
          // === Fichier local : tout griser + message informatif ===
-         uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
-           b.classList.add('btn-disabled');
-           b.classList.remove('active');
-         });
-         btnDirectImport.classList.add('btn-disabled');
+          uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+            setFormatBtnDisabled(b);
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          setFormatBtnDisabled(btnDirectImport);
          currentFormat = 'direct';
          updateStatus(t('warnLocalFile'), "info");
          updateCaptureButtonLabel();
@@ -545,30 +621,32 @@ function applyButtonVisibility(fileInfo) {
 
    // Images : PDF/MD n'ont pas de sens (Readability sur un viewer d'image = garbled)
    if (fileInfo.category === 'image') {
-     pdfBtn.classList.add('btn-disabled');
-     mdBtn.classList.add('btn-disabled');
-   }
+      setFormatBtnDisabled(pdfBtn);
+      setFormatBtnDisabled(mdBtn);
+    }
 
    // Audio/Vidéo : PDF/MD/Screenshot n'ont aucun sens
    if (fileInfo.category === 'audio' || fileInfo.category === 'video') {
-     pdfBtn.classList.add('btn-disabled');
-     mdBtn.classList.add('btn-disabled');
-     screenshotBtn.classList.add('btn-disabled');
-   }
+      setFormatBtnDisabled(pdfBtn);
+      setFormatBtnDisabled(mdBtn);
+      setFormatBtnDisabled(screenshotBtn);
+    }
 
    // Fichier local : URL grisé (Google ne peut pas scraper file://)
    if (fileInfo.isLocal) {
-     urlBtn.classList.add('btn-disabled');
-   }
+      setFormatBtnDisabled(urlBtn);
+    }
 
    // Si le format actif est maintenant désactivé, basculer sur Import Direct
    const activeBtn = uiFormatToggle.querySelector('.format-btn.active');
    if (activeBtn && activeBtn.classList.contains('btn-disabled')) {
-     activeBtn.classList.remove('active');
-     btnDirectImport.classList.add('active');
-     currentFormat = 'direct';
-     updateCaptureButtonLabel();
-   }
+      activeBtn.classList.remove('active');
+      activeBtn.setAttribute('aria-pressed', 'false');
+      btnDirectImport.classList.add('active');
+      btnDirectImport.setAttribute('aria-pressed', 'true');
+      currentFormat = 'direct';
+      updateCaptureButtonLabel();
+    }
 }
 
 /**
@@ -598,12 +676,13 @@ async function checkPendingSelection() {
      
      // Basculer sur le format "selection" et griser TOUS les boutons de format
      // (la sélection ne supporte qu'un seul mode : texte source)
-     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
-       b.classList.remove('active');
-       b.classList.add('btn-disabled');
-     });
-     // Griser aussi le bouton Import Direct s'il est visible
-     if (btnDirectImport) btnDirectImport.classList.add('btn-disabled');
+      uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+        setFormatBtnDisabled(b);
+      });
+      // Griser aussi le bouton Import Direct s'il est visible
+      if (btnDirectImport) setFormatBtnDisabled(btnDirectImport);
      
      currentFormat = 'selection';
      updateCaptureButtonLabel();
@@ -631,7 +710,8 @@ function resetUI() {
 function updateStatus(message, type, linkUrl, showDownload) {
   // Construction DOM sécurisée (pas de innerHTML)
   uiStatusMessage.replaceChildren();
-  uiStatusMessage.appendChild(document.createTextNode(message));
+  const displayMessage = (type === 'error') ? `⚠️ ${message}` : message;
+  uiStatusMessage.appendChild(document.createTextNode(displayMessage));
   
   if (linkUrl) {
     const link = document.createElement('a');

@@ -14,8 +14,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     const format = message.format || "pdf";
     const intentNote = message.intentNote ?? null;
+    const i18nLabels = message.i18nLabels || {};
 
-    handleCapture(format, intentNote)
+    handleCapture(format, intentNote, i18nLabels)
       .then(result => sendResponse({
         status: "SUCCESS",
         payload: result,
@@ -56,9 +57,10 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
  *
  * @param  {string}      format     - Format de sortie : "pdf" ou "md".
  * @param  {string|null} intentNote - Annotation d'intention optionnelle (§8 AGENTS.md).
+ * @param  {Object}      i18nLabels - Localized labels from background.js for content scripts.
  * @returns {Promise<string>}        - Base64 data URI (PDF) ou texte Markdown brut.
  */
-async function handleCapture(format, intentNote = null) {
+async function handleCapture(format, intentNote = null, i18nLabels = {}) {
 
   // 1. Quotas (seulement pour PDF, le Markdown est toujours léger)
   if (format === "pdf") {
@@ -70,15 +72,15 @@ async function handleCapture(format, intentNote = null) {
   wrapperClone.appendChild(document.body.cloneNode(true));
 
   // 3. Serializer : extraction + container Reader Mode + images data URIs
-  const container = await window.ClipperSerializer.process(wrapperClone);
+  const container = await window.ClipperSerializer.process(wrapperClone, i18nLabels);
 
   if (format === "md") {
     // 4a. Markdown Generator : texte structuré
-    const markdown = window.ClipperMarkdownGenerator.generate(container, intentNote);
+    const markdown = window.ClipperMarkdownGenerator.generate(container, intentNote, i18nLabels);
     return markdown;
   } else {
     // 4b. PDF Generator : jsPDF sur le container autonome
-    const base64Pdf = await window.ClipperPDFGenerator.generate(container, intentNote);
+    const base64Pdf = await window.ClipperPDFGenerator.generate(container, intentNote, i18nLabels);
     return base64Pdf;
   }
 }

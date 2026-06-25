@@ -121,7 +121,7 @@ window.ClipperPDFGenerator = {
    * @param {HTMLElement} container - Container avec CSS Reader Mode + data URI images.
    * @returns {Promise<string>} PDF en Base64 Data URI.
    */
-  async generate(container, intentNote = null) {
+  async generate(container, intentNote = null, i18nLabels = {}) {
     // Extraire les blocs du container HTML
     const blocks = this._extractBlocks(container);
 
@@ -178,7 +178,7 @@ window.ClipperPDFGenerator = {
       // Titre de section
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.text("[INTENTION DE RECHERCHE]", margin, y);
+      doc.text(`[${i18nLabels.intentHeader || 'INTENTION DE RECHERCHE'}]`, margin, y);
       y += lineHeight;
 
       // Contenu de la note
@@ -208,7 +208,7 @@ window.ClipperPDFGenerator = {
       switch (block.type) {
 
         case 'meta-title':
-          addText('— Métadonnées de Capture (NotebookLM) —', 11, true, 3, [80, 80, 80]);
+          addText(`— ${i18nLabels.captureHeader || 'Métadonnées de Capture (NotebookLM)'} —`, 11, true, 3, [80, 80, 80]);
           addText(block.text, 10, true, 2, [50, 50, 50]);
           break;
 

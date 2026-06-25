@@ -327,7 +327,7 @@
     "message": "Ka konèkté..."
   },
   "btnCreateNotebookTitle": {
-    "message": "Kréyé an nouvo kané"
+    "message": "Kréyé an nouvo kayé"
   },
   "btnPdfTitle": {
     "message": "Imaj andidan, dispozisyon vizyèl"
@@ -349,5 +349,53 @@
   },
   "btnClearSelectionTitle": {
     "message": "Anilé"
+  },
+  "metaUntitledDocument": {
+    "message": "Dokiman san tit",
+    "description": "Fallback title for pages without a title in generated documents"
+  },
+  "metaCaptureHeader": {
+    "message": "Métadonnées Kaptir (NotebookLM)",
+    "description": "Header label for capture metadata section in generated documents"
+  },
+  "metaAuthorPrefix": {
+    "message": "Pa:",
+    "description": "Prefix before author name in metadata"
+  },
+  "metaSitePrefix": {
+    "message": "Sit:",
+    "description": "Prefix before site name in metadata"
+  },
+  "metaDatePrefix": {
+    "message": "Kaptché lè:",
+    "description": "Prefix before capture date in metadata"
+  },
+  "intentHeader": {
+    "message": "LENTANSYON RÉCHÈCH",
+    "description": "Header label for research intent section in generated documents"
+  },
+  "labelSource": {
+    "message": "Sous:",
+    "description": "Label for source URL in selection metadata"
+  },
+  "labelTitle": {
+    "message": "Tit:",
+    "description": "Label for page title in selection metadata"
+  },
+  "labelCaptureDate": {
+    "message": "Dat kaptir:",
+    "description": "Label for capture date in selection metadata"
+  },
+  "selectionFallbackTitle": {
+    "message": "Sélèksyon",
+    "description": "Fallback title used when selection has no page title"
+  },
+  "autoNotebookTitle": {
+    "message": "Kaptir - {date}",
+    "description": "Auto-generated notebook title with date placeholder"
+  },
+  "formatLabelDirect": {
+    "message": "Enpòtasyon dirèk",
+    "description": "Label for direct import format in status messages"
   }
 }

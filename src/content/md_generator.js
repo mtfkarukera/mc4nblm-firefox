@@ -108,7 +108,7 @@ window.ClipperMarkdownGenerator = {
    * @param {HTMLElement} container - Container avec CSS Reader Mode + data URI images.
    * @returns {string} Document Markdown complet.
    */
-  generate(container, intentNote = null) {
+  generate(container, intentNote = null, i18nLabels = {}) {
     // Contexte Sélection : fragment HTML brut parsé via DOMParser (conforme AMO)
     if (typeof container === 'string') {
       const parser = new DOMParser();
@@ -123,7 +123,7 @@ window.ClipperMarkdownGenerator = {
     const buildIntentPrefix = (note) => {
       if (!note) return "";
       return [
-        "> **[INTENTION DE RECHERCHE]**",
+        `> **[${i18nLabels.intentHeader || 'INTENTION DE RECHERCHE'}]**`,
         `> ${note.split('\n').join('\n> ')}`,
         ">",
         ""

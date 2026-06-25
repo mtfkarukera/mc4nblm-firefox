@@ -349,5 +349,53 @@
   },
   "btnClearSelectionTitle": {
     "message": "Abbrechen"
+  },
+  "metaUntitledDocument": {
+    "message": "Unbenanntes Dokument",
+    "description": "Fallback title for pages without a title in generated documents"
+  },
+  "metaCaptureHeader": {
+    "message": "Erfassungsmetadaten (NotebookLM)",
+    "description": "Header label for capture metadata section in generated documents"
+  },
+  "metaAuthorPrefix": {
+    "message": "Von:",
+    "description": "Prefix before author name in metadata"
+  },
+  "metaSitePrefix": {
+    "message": "Webseite:",
+    "description": "Prefix before site name in metadata"
+  },
+  "metaDatePrefix": {
+    "message": "Erfasst am:",
+    "description": "Prefix before capture date in metadata"
+  },
+  "intentHeader": {
+    "message": "FORSCHUNGSABSICHT",
+    "description": "Header label for research intent section in generated documents"
+  },
+  "labelSource": {
+    "message": "Quelle:",
+    "description": "Label for source URL in selection metadata"
+  },
+  "labelTitle": {
+    "message": "Titel:",
+    "description": "Label for page title in selection metadata"
+  },
+  "labelCaptureDate": {
+    "message": "Erfassungsdatum:",
+    "description": "Label for capture date in selection metadata"
+  },
+  "selectionFallbackTitle": {
+    "message": "Auswahl",
+    "description": "Fallback title used when selection has no page title"
+  },
+  "autoNotebookTitle": {
+    "message": "Erfassung - {date}",
+    "description": "Auto-generated notebook title with date placeholder"
+  },
+  "formatLabelDirect": {
+    "message": "Direktimport",
+    "description": "Label for direct import format in status messages"
   }
 }

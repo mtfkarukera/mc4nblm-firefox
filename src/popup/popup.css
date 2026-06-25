@@ -32,6 +32,11 @@
 
   --radius-sm: 8px;
   --radius-md: 12px;
+  --radius-xs: 4px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -139,7 +144,7 @@ input[type="text"] {
   padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  outline: none;
+  outline: 2px solid transparent;
   font-size: 14px;
   transition: border-color 0.2s;
   background-color: var(--bg-element);
@@ -147,6 +152,10 @@ input[type="text"] {
 }
 input[type="text"]:focus {
   border-color: var(--primary-color);
+}
+input[type="text"]:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
 }
 
 /* Notebook List */
@@ -247,7 +256,7 @@ input[type="text"]:focus {
 
 /* Disabled state for format buttons */
 .format-btn.btn-disabled {
-  opacity: 0.35;
+  opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
 }
@@ -286,7 +295,9 @@ input[type="text"]:focus {
   color: var(--warning-icon);
   font-size: 14px;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 6px 10px;
+  min-width: 32px;
+  min-height: 32px;
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -311,7 +322,7 @@ input[type="text"]:focus {
   font-size: 12px;
   line-height: 1.4;
   resize: none;
-  outline: none;
+  outline: 2px solid transparent;
   transition: border-color 0.2s;
 }
 
@@ -321,6 +332,10 @@ input[type="text"]:focus {
 
 .intent-input:focus {
   border-color: var(--primary-color);
+}
+.intent-input:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
 }
 
 .intent-counter {
@@ -347,6 +362,17 @@ input[type="text"]:focus {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.btn:focus-visible,
+.format-btn:focus-visible,
+#btn-create-notebook:focus-visible,
+.selection-clear:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+.btn:active:not(:disabled),
+.format-btn:active:not(.btn-disabled) {
+  transform: scale(0.97);
 }
 .primary-btn {
   width: 100%;
@@ -446,6 +472,11 @@ footer { margin-bottom: 0; padding: 8px 12px; text-align: center; }
     padding: 6px 8px;
     font-size: 13px;
   }
+  .selection-clear {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
 }
 
 /* Sélecteur de langue */
@@ -457,10 +488,23 @@ footer { margin-bottom: 0; padding: 8px 12px; text-align: center; }
   background: var(--panel-bg);
   color: var(--text-muted);
   cursor: pointer;
-  outline: none;
+  outline: 2px solid transparent;
   transition: border-color 0.2s, color 0.2s;
 }
 .locale-selector:hover, .locale-selector:focus {
   border-color: var(--primary-color);
   color: var(--primary-color);
+}
+.locale-selector:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -76,7 +76,7 @@
     "description": "Label for the intent note field"
   },
   "intentNotePlaceholder": {
-    "message": "Opcional: describa su intención de búsqueda...",
+    "message": "Opcional: describe tu intención de búsqueda...",
     "description": "Placeholder text for the intent note textarea"
   },
   "statusCapturing": {
@@ -106,7 +106,7 @@
     "description": "User-facing error when API structure is modified"
   },
   "errorAuthExpired": {
-    "message": "Sesión expirada. Por favor, vuelva a conectarse a NotebookLM.",
+    "message": "Sesión expirada. Vuelve a conectarte a NotebookLM.",
     "description": "User-facing error on 401/403"
   },
   "errorUploadSessionMissing": {
@@ -114,7 +114,7 @@
     "description": "User-facing error when upload URL is missing"
   },
   "errorTimeout": {
-    "message": "La solicitud ha expirado. Por favor, compruebe su conexión.",
+    "message": "La solicitud ha expirado. Comprueba tu conexión.",
     "description": "User-facing error for timeouts"
   },
   "errorInjectionFailed": {
@@ -122,7 +122,7 @@
     "description": "User-facing error when script injection fails"
   },
   "errorUnknown": {
-    "message": "Ha ocurrido un error desconocido. Consulte la consola.",
+    "message": "Ha ocurrido un error desconocido. Consulta la consola.",
     "description": "User-facing error for uncategorized errors"
   },
   "menuContextImportSelection": {
@@ -349,5 +349,53 @@
   },
   "btnClearSelectionTitle": {
     "message": "Cancelar"
+  },
+  "metaUntitledDocument": {
+    "message": "Documento sin título",
+    "description": "Fallback title for pages without a title in generated documents"
+  },
+  "metaCaptureHeader": {
+    "message": "Metadatos de Captura (NotebookLM)",
+    "description": "Header label for capture metadata section in generated documents"
+  },
+  "metaAuthorPrefix": {
+    "message": "Por:",
+    "description": "Prefix before author name in metadata"
+  },
+  "metaSitePrefix": {
+    "message": "Sitio:",
+    "description": "Prefix before site name in metadata"
+  },
+  "metaDatePrefix": {
+    "message": "Capturado el:",
+    "description": "Prefix before capture date in metadata"
+  },
+  "intentHeader": {
+    "message": "INTENCIÓN DE INVESTIGACIÓN",
+    "description": "Header label for research intent section in generated documents"
+  },
+  "labelSource": {
+    "message": "Fuente:",
+    "description": "Label for source URL in selection metadata"
+  },
+  "labelTitle": {
+    "message": "Título:",
+    "description": "Label for page title in selection metadata"
+  },
+  "labelCaptureDate": {
+    "message": "Fecha de captura:",
+    "description": "Label for capture date in selection metadata"
+  },
+  "selectionFallbackTitle": {
+    "message": "Selección",
+    "description": "Fallback title used when selection has no page title"
+  },
+  "autoNotebookTitle": {
+    "message": "Captura - {date}",
+    "description": "Auto-generated notebook title with date placeholder"
+  },
+  "formatLabelDirect": {
+    "message": "Importación directa",
+    "description": "Label for direct import format in status messages"
   }
 }

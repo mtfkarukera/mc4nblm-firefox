@@ -108,7 +108,7 @@ window.ClipperSerializer = {
    * @param  {HTMLElement} wrapperClone - Clone du body, utilisé en fallback si Readability échoue.
    * @returns {Promise<HTMLElement>}     - Container HTML 100% autonome (CSS + métadonnées + contenu).
    */
-  async process(wrapperClone) {
+  async process(wrapperClone, i18nLabels = {}) {
     // ---------------------------------------------------------------
     // ÉTAPE 1 : Extraction du contenu via Readability
     // (Skill readability-content-extractor §2-3)
@@ -138,7 +138,7 @@ window.ClipperSerializer = {
     // ÉTAPE 2 : Construction du container HTML virtuel
     // (Skill readability-content-extractor §3)
     // ---------------------------------------------------------------
-    const container = this._buildContainer(contentHtml, title, byline, siteName);
+    const container = this._buildContainer(contentHtml, title, byline, siteName, i18nLabels);
 
     // ---------------------------------------------------------------
     // ÉTAPE 3 : Tainted Canvas Protection
@@ -243,7 +243,7 @@ window.ClipperSerializer = {
    * @param  {string|null} siteName    - Nom du site extrait par Readability (null si absent ou fallback).
    * @returns {HTMLElement}             - Div container autonome prêt pour la génération PDF/MD.
    */
-  _buildContainer(contentHtml, title, byline, siteName) {
+  _buildContainer(contentHtml, title, byline, siteName, i18nLabels = {}) {
     const container = document.createElement('div');
 
     // CSS Reader Mode (inline <style>) — marqué pour isolation CORS
@@ -260,7 +260,7 @@ window.ClipperSerializer = {
     const pageTitle = title
                    || document.querySelector('title')?.innerText
                    || document.querySelector('h1')?.innerText
-                   || 'Document sans titre';
+                   || i18nLabels.untitledDocument || 'Document sans titre';
     const pageUrl = window.location.href;
     const captureDate = new Date().toLocaleString();
 
@@ -270,7 +270,7 @@ window.ClipperSerializer = {
     // Construction DOM sécurisée (zéro innerHTML — conformité Mozilla AMO)
     const labelDiv = document.createElement('div');
     labelDiv.className = 'meta-label';
-    labelDiv.textContent = 'Métadonnées de Capture (NotebookLM)';
+    labelDiv.textContent = i18nLabels.captureHeader || 'Métadonnées de Capture (NotebookLM)';
     metaBlock.appendChild(labelDiv);
 
     const titleDiv = document.createElement('div');
@@ -281,18 +281,18 @@ window.ClipperSerializer = {
     if (byline) {
       const authorDiv = document.createElement('div');
       authorDiv.className = 'meta-author';
-      authorDiv.textContent = `Par : ${byline}`;
+      authorDiv.textContent = `${i18nLabels.authorPrefix || 'Par :'} ${byline}`;
       metaBlock.appendChild(authorDiv);
     }
     if (siteName) {
       const siteDiv = document.createElement('div');
-      siteDiv.textContent = `Site : ${siteName}`;
+      siteDiv.textContent = `${i18nLabels.sitePrefix || 'Site :'} ${siteName}`;
       metaBlock.appendChild(siteDiv);
     }
 
     const dateDiv = document.createElement('div');
     dateDiv.className = 'meta-date';
-    dateDiv.textContent = `Capturé le : ${captureDate}`;
+    dateDiv.textContent = `${i18nLabels.datePrefix || 'Capturé le :'} ${captureDate}`;
     metaBlock.appendChild(dateDiv);
 
     const urlDiv = document.createElement('div');

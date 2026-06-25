@@ -209,16 +209,16 @@
     "message": "L'API NotebookLM a été modifiée par Google. Une mise à jour de l'extension est requise."
   },
   "sessionExpired": {
-    "message": "Session expirée. Reconnecte-toi sur notebooklm.google.com."
+    "message": "Session expirée. Reconnectez-vous sur notebooklm.google.com."
   },
   "uploadSessionFailed": {
     "message": "L'upload a échoué : impossible d'obtenir une session d'upload."
   },
   "timeout": {
-    "message": "Délai dépassé. Vérifie ta connexion et réessaie."
+    "message": "Délai dépassé. Vérifiez votre connexion et réessayez."
   },
   "unexpectedError": {
-    "message": "Une erreur inattendue s'est produite. Consulte la console pour le diagnostic."
+    "message": "Une erreur inattendue s'est produite. Consultez la console pour le diagnostic."
   },
   "errFileReader": {
     "message": "Lecture du fichier échouée."
@@ -349,5 +349,53 @@
   },
   "btnClearSelectionTitle": {
     "message": "Annuler"
+  },
+  "metaUntitledDocument": {
+    "message": "Document sans titre",
+    "description": "Fallback title for pages without a title in generated documents"
+  },
+  "metaCaptureHeader": {
+    "message": "Métadonnées de Capture (NotebookLM)",
+    "description": "Header label for capture metadata section in generated documents"
+  },
+  "metaAuthorPrefix": {
+    "message": "Par :",
+    "description": "Prefix before author name in metadata"
+  },
+  "metaSitePrefix": {
+    "message": "Site :",
+    "description": "Prefix before site name in metadata"
+  },
+  "metaDatePrefix": {
+    "message": "Capturé le :",
+    "description": "Prefix before capture date in metadata"
+  },
+  "intentHeader": {
+    "message": "INTENTION DE RECHERCHE",
+    "description": "Header label for research intent section in generated documents"
+  },
+  "labelSource": {
+    "message": "Source :",
+    "description": "Label for source URL in selection metadata"
+  },
+  "labelTitle": {
+    "message": "Titre :",
+    "description": "Label for page title in selection metadata"
+  },
+  "labelCaptureDate": {
+    "message": "Date de capture :",
+    "description": "Label for capture date in selection metadata"
+  },
+  "selectionFallbackTitle": {
+    "message": "Sélection",
+    "description": "Fallback title used when selection has no page title"
+  },
+  "autoNotebookTitle": {
+    "message": "Capture - {date}",
+    "description": "Auto-generated notebook title with date placeholder"
+  },
+  "formatLabelDirect": {
+    "message": "Import direct",
+    "description": "Label for direct import format in status messages"
   }
 }
