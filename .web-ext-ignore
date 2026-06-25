@@ -18,4 +18,5 @@ web-ext-config.cjs
 # Dossiers vides ou artefacts
 dist/
 web-ext-artifacts/
+artifacts/
 *.zip
