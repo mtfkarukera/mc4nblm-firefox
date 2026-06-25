@@ -228,6 +228,37 @@ mc4nblm-firefox/
 
 ## 📋 Changelog récent
 
+### v6.1.0 — Accessibilité, Stabilité, Architecture & Polish — Juin 2026
+
+#### ♿ Accessibilité (WCAG 2.1 AA)
+- Labels ARIA, rôles et régions `aria-live` sur tous les éléments interactifs
+- Navigation clavier complète sur tous les boutons et listes
+- Support `prefers-reduced-motion`
+- Toutes les chaînes UI hardcodées migrées vers l'i18n
+
+#### 🛡️ Stabilité & Robustesse
+- Persistance de session entre les redémarrages Firefox
+- Mécanisme keepAlive du service worker
+- Verrous de concurrence pour prévenir les captures en doublon
+- Timeouts sur tous les appels RPC asynchrones
+
+#### 🏗️ Architecture
+- Refactoring complet en ES Modules (popup + background)
+- Table de dispatch remplaçant les chaînes if/else
+- Format de réponse d'erreur normalisé sur tous les handlers
+
+#### ✨ Interface & Qualité
+- Skeleton loader animé (3 barres pulsantes) pendant le chargement des carnets
+- Couleurs inline remplacées par des variables CSS (thème clair/sombre automatique)
+- Layout popup réécrit en Flex colonne : hauteur fixe 580px, plus de scrollbar externe
+- `PDF_LAYOUT` : constante extraite dans `pdf_generator.js`
+- 67 descriptions i18n ajoutées (EN), 7 corrections terminologiques FR (Screenshot→Capture d'écran, Upload→Téléversement)
+- `check-i18n.js` renforcé : détection valeurs vides et placeholders non déclarés
+
+#### 🐛 Correctifs
+- **Critique** : popup réduite à un bandeau sur toutes les résolutions — `height:100vh` remplacé par `height:580px` (comportement non supporté dans les popups Firefox)
+- Liste des carnets : hauteur adaptative via Flex, scrollbar interne fine et discrète
+
 ### v6.0.0 — Contrôle & Sanitarisation — Juin 2026
 
 #### Corrections
@@ -400,4 +431,4 @@ mc4nblm-firefox/
 ---
 
 *Projet développé selon la méthodologie **Spec-Driven Development (SDD)**.*
-*Version 6.0.0 — Juin 2026*
+*Version 6.1.0 — Juin 2026*
