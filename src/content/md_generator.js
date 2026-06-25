@@ -306,7 +306,7 @@ window.ClipperMarkdownGenerator = {
   _extractBlocks(container) {
     const blocks = [];
 
-    const walk = (node, listContext) => {
+    const walk = (node) => {
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent.trim();
         if (text.length > 0) blocks.push({ type: 'p', text });

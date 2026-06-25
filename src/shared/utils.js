@@ -75,20 +75,7 @@ export function t(key, substitutions = {}) {
   return msg;
 }
 
-/**
- * Convertit un Blob en data URI Base64 via FileReader.
- *
- * @param  {Blob} blob - Blob à convertir.
- * @returns {Promise<string>} - Data URI (ex: "data:image/png;base64,…").
- */
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+
 
 /**
  * Détecte si l'URL correspond à une application Google Workspace supportée
@@ -135,8 +122,42 @@ function parseDriveUrl(url) {
   }
 }
 
+/**
+ * Retourne l'index du compte Google actif depuis browser.storage.local.
+ * Remplace le pattern répété 6× dans background.js.
+ * @returns {Promise<number>}
+ */
+export async function getActiveAuthuser() {
+  const data = await browser.storage.local.get('nblm_active_authuser');
+  return data.nblm_active_authuser !== undefined ? data.nblm_active_authuser : 0;
+}
+
+/**
+ * Convertit une chaîne Base64 brute (sans préfixe data URI) en Uint8Array.
+ * Remplace le pattern atob/charCodeAt répété 3× dans le projet.
+ * @param  {string} base64 - Chaîne Base64 pure.
+ * @returns {Uint8Array}
+ */
+export function base64ToUint8Array(base64) {
+  const binaryStr = atob(base64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Construit l'URL publique d'un carnet NotebookLM.
+ * Remplace 7+ constructions inline.
+ * @param  {string} notebookId
+ * @returns {string}
+ */
+export function buildNotebookUrl(notebookId) {
+  return `https://notebooklm.google.com/notebook/${notebookId}`;
+}
+
 // Export pour le contexte du Content Script (accès via window.ClipperUtils)
 window.ClipperUtils = {
-  blobToBase64,
   parseDriveUrl,
 };

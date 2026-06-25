@@ -412,6 +412,13 @@ function startCaptureProcess() {
        format: 'selection',
        selectionData: pendingSelection,
        intentNote: intentInput.value.trim() || null
+     }).then(res => {
+       if (res?.status === 'error' && res.i18nKey) {
+         clearTimeout(safetyResetTimer); safetyResetTimer = null;
+         closeKeepAlivePort();
+         updateStatus(t(res.i18nKey), 'error');
+         resetUI();
+       }
      }).catch(() => { closeKeepAlivePort(); resetUI(); });
      
      // Nettoyer la sélection en attente
@@ -437,6 +444,13 @@ function startCaptureProcess() {
      notebookId: currentSelectedNotebookId,
      format: currentFormat,
      intentNote: intentInput.value.trim() || null
+   }).then(res => {
+     if (res?.status === 'error' && res.i18nKey) {
+       clearTimeout(safetyResetTimer); safetyResetTimer = null;
+       closeKeepAlivePort();
+       updateStatus(t(res.i18nKey), 'error');
+       resetUI();
+     }
    }).catch(() => { closeKeepAlivePort(); resetUI(); });
 }
 

@@ -148,6 +148,7 @@ function parseChunkedResponse(response) {
                     const chunk = JSON.parse(lines[i]);
                     chunks.push(chunk);
                 } catch (e) {
+                    console.debug('[MC] rpc_client catch:', e?.message);
                     // Chunk malformé, on skip
                 }
             }
@@ -158,6 +159,7 @@ function parseChunkedResponse(response) {
                 const chunk = JSON.parse(line);
                 chunks.push(chunk);
             } catch (e) {
+                console.debug('[MC] rpc_client catch:', e?.message);
                 // Skip les lignes non-JSON
             }
             i++;
@@ -503,39 +505,25 @@ export async function addYouTubeSource(notebookId, url, authuserIndex = 0) {
 }
 
 /**
- * Upload un PDF encodé en Base64 Data URI vers un carnet NotebookLM
- * via le protocole d'upload resumable en 3 étapes (register → start → finalize).
+ * Upload un Blob binaire vers un carnet NotebookLM via le protocole resumable 3 étapes
+ * (register RPC → start upload session → upload + finalize).
+ * C'est la primitive de bas niveau partagée par uploadPersonalSource et upload.js.
  *
- * @param  {string}      notebookId          - ID du carnet cible.
- * @param  {string}      pdfDataUri           - PDF encodé en Data URI Base64 (data:application/pdf;base64,...).
- * @param  {string|null} [customTitle=null]   - Titre personnalisé du fichier (sans extension). Fallback : date ISO.
- * @param  {number}      [authuserIndex=0]   - Index du compte Google actif.
- * @returns {Promise<true>}                   - Résout à true si l'upload est terminé.
- * @throws  {Error}                           - Si l'authentification est absente, si SOURCE_ID est manquant,
- *                                              ou si x-goog-upload-url est absent de la réponse serveur.
- * @throws  {RpcApiChangedError}              - Si la structure RPC de l'étape d'enregistrement a changé.
+ * @param  {string} notebookId          - ID du carnet cible.
+ * @param  {Blob}   blob                - Blob binaire du fichier à uploader.
+ * @param  {string} filename            - Nom du fichier avec extension (ex: "capture.pdf").
+ * @param  {number} [authuserIndex=0]  - Index du compte Google actif.
+ * @returns {Promise<true>}              - Résout à true si l'upload est terminé.
+ * @throws  {Error}                     - Si l'authentification est absente, SOURCE_ID manquant,
+ *                                        ou x-goog-upload-url absent de la réponse serveur.
+ * @throws  {RpcApiChangedError}        - Si la structure RPC de l'étape d'enregistrement a changé.
  */
-export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle = null, authuserIndex = 0) {
-    
+export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) {
+
     const data = await browser.storage.local.get(['nblm_personal_cookie', 'nblm_csrf']);
     if (!data.nblm_personal_cookie || !data.nblm_csrf) {
         throw new Error("Authentification personnelle non finalisée.");
     }
-
-    // Convertir le data URI en binaire
-    const base64Content = pdfDataUri.split(',')[1]; // Retirer le préfixe "data:application/pdf;base64,"
-    const binaryString = atob(base64Content);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
-    
-    // Nom du fichier = titre de la page (ou fallback générique)
-    const filename = customTitle 
-        ? `${customTitle}.pdf` 
-        : `Capture_${new Date().toISOString().slice(0,10)}.pdf`;
-    const fileSize = pdfBlob.size;
 
     // ╔════════════════════════════════════════════════════════╗
     // ║ ÉTAPE 1 : Enregistrer l'intention de source (RPC)     ║
@@ -549,9 +537,9 @@ export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle =
         [2],
         [1, null, null, null, null, null, null, null, null, null, [1]]
     ];
-    
+
     const registerResult = await sendBatchExecute(registerRpcId, registerParams, authuserIndex);
-    
+
     // Extraire le SOURCE_ID de la réponse (structure imbriquée: [[[[id]]]] ou similaire)
     const sourceId = extractFirstString(registerResult);
     if (!sourceId) {
@@ -564,13 +552,13 @@ export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle =
     // ║ Headers: x-goog-upload-command: start                 ║
     // ╚════════════════════════════════════════════════════════╝
     const uploadStartUrl = `https://notebooklm.google.com/upload/_/?authuser=${authuserIndex}`;
-    
+
     const startBody = JSON.stringify({
         "PROJECT_ID": notebookId,
         "SOURCE_NAME": filename,
         "SOURCE_ID": sourceId
     });
-    
+
     const startResponse = await fetch(uploadStartUrl, {
         method: 'POST',
         headers: {
@@ -581,16 +569,16 @@ export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle =
             'Referer': 'https://notebooklm.google.com/',
             'x-goog-authuser': String(authuserIndex),
             'x-goog-upload-command': 'start',
-            'x-goog-upload-header-content-length': String(fileSize),
+            'x-goog-upload-header-content-length': String(blob.size),
             'x-goog-upload-protocol': 'resumable'
         },
         body: startBody
     });
-    
+
     if (!startResponse.ok) {
         throw new Error(`Échec démarrage upload: HTTP ${startResponse.status}`);
     }
-    
+
     const uploadUrl = startResponse.headers.get('x-goog-upload-url');
     if (!uploadUrl) {
         throw new Error("Échec: pas de x-goog-upload-url dans la réponse du serveur.");
@@ -613,14 +601,45 @@ export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle =
             'x-goog-upload-command': 'upload, finalize',
             'x-goog-upload-offset': '0'
         },
-        body: pdfBlob
+        body: blob
     });
-    
+
     if (!finalizeResponse.ok) {
         throw new Error(`Échec upload fichier: HTTP ${finalizeResponse.status}`);
     }
-    
+
     return true;
+}
+
+/**
+ * Upload un PDF encodé en Base64 Data URI vers un carnet NotebookLM.
+ * Convertit le Data URI en Blob puis délègue à uploadBlob().
+ *
+ * @param  {string}      notebookId          - ID du carnet cible.
+ * @param  {string}      pdfDataUri          - PDF encodé en Data URI Base64 (data:application/pdf;base64,...).
+ * @param  {string|null} [customTitle=null]  - Titre personnalisé du fichier (sans extension). Fallback : date ISO.
+ * @param  {number}      [authuserIndex=0]  - Index du compte Google actif.
+ * @returns {Promise<true>}                  - Résout à true si l'upload est terminé.
+ * @throws  {Error}                          - Si l'authentification est absente, SOURCE_ID manquant,
+ *                                             ou x-goog-upload-url absent de la réponse serveur.
+ * @throws  {RpcApiChangedError}             - Si la structure RPC de l'étape d'enregistrement a changé.
+ */
+export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle = null, authuserIndex = 0) {
+
+    // Convertir le data URI en Blob binaire
+    const base64Content = pdfDataUri.split(',')[1]; // Retirer le préfixe "data:application/pdf;base64,"
+    const binaryString = atob(base64Content);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
+
+    const filename = customTitle
+        ? `${customTitle}.pdf`
+        : `Capture_${new Date().toISOString().slice(0,10)}.pdf`;
+
+    return uploadBlob(notebookId, pdfBlob, filename, authuserIndex);
 }
 
 /**
