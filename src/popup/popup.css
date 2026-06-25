@@ -78,7 +78,9 @@ body {
   width: 100%;
   min-width: 320px;
   max-width: 440px;
-  min-height: 500px;
+  /* Hauteur contrainte : la popup ne grandit plus, elle s'adapte */
+  height: 100vh;
+  max-height: 600px;
   margin: 0;
   padding: 10px;
   box-sizing: border-box;
@@ -86,7 +88,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-main);
   line-height: 1.5;
-  overflow-y: auto;
+  /* Flex colonne : chaque section empile sans déborder */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Glassmorphism panel base */
@@ -98,6 +103,17 @@ header, section, footer {
   padding: 8px 10px;
   margin-bottom: 6px;
   box-shadow: 0 4px 6px var(--shadow-color);
+  /* Aucune section ne compresse les autres par défaut */
+  flex-shrink: 0;
+}
+
+/* La section carnets est la seule à absorber l'espace libre */
+.research-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0; /* requis pour que flex-shrink fonctionne correctement */
 }
 
 /* Header & Logo */
@@ -163,7 +179,9 @@ input[type="text"]:focus-visible {
 /* Notebook List */
 .notebook-list {
   margin-top: var(--space-md);
-  max-height: 160px;
+  flex: 1;              /* prend tout l'espace disponible dans .research-section */
+  min-height: 80px;    /* au moins 2-3 items toujours visibles */
+  max-height: none;    /* plus de valeur arbitraire — c'est le flex qui contrôle */
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -446,6 +464,7 @@ footer { margin-bottom: 0; padding: 8px 12px; text-align: center; }
   width: 100%;
   padding: 8px;
   margin-top: 4px;
+  flex-shrink: 0; /* ne se comprime jamais */
   background-color: var(--status-error);
   color: var(--btn-text);
   font-size: 13px;
