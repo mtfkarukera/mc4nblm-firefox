@@ -78,9 +78,8 @@ body {
   width: 100%;
   min-width: 320px;
   max-width: 440px;
-  /* Hauteur contrainte : la popup ne grandit plus, elle s'adapte */
-  height: 100vh;
-  max-height: 600px;
+  /* Hauteur fixe en px : 100vh ne fonctionne pas dans les popups Firefox */
+  height: 580px;
   margin: 0;
   padding: 10px;
   box-sizing: border-box;
