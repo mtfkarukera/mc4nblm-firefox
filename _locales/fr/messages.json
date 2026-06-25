@@ -48,11 +48,11 @@
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
-    "message": "Screenshot",
+    "message": "Capture d'écran",
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
-    "message": "Capturer un screenshot et l'importer dans NotebookLM",
+    "message": "Capturer une capture d'écran et l'importer dans NotebookLM",
     "description": "Accessible label for the Screenshot button"
   },
   "btnDirect": {
@@ -212,7 +212,7 @@
     "message": "Session expirée. Reconnectez-vous sur notebooklm.google.com."
   },
   "uploadSessionFailed": {
-    "message": "L'upload a échoué : impossible d'obtenir une session d'upload."
+    "message": "Le téléversement a échoué : impossible d'obtenir une session de téléversement."
   },
   "timeout": {
     "message": "Délai dépassé. Vérifiez votre connexion et réessayez."
@@ -234,7 +234,7 @@
     "message": "Création du carnet..."
   },
   "statusUploadSelection": {
-    "message": "📋 Upload de la sélection..."
+    "message": "📋 Téléversement de la sélection..."
   },
   "statusImportedSelection": {
     "message": "✅ Sélection importée !"
@@ -258,16 +258,16 @@
     "message": "📸 Capture du viewport..."
   },
   "statusUploadScreenshot": {
-    "message": "📸 Upload du screenshot..."
+    "message": "📸 Téléversement de la capture d'écran..."
   },
   "statusImportedScreenshot": {
-    "message": "✅ Screenshot importé !"
+    "message": "✅ Capture d'écran importée !"
   },
   "statusDownloadFile": {
     "message": "⚡ Téléchargement du fichier..."
   },
   "statusUploadFile": {
-    "message": "⚡ Upload du {ext}..."
+    "message": "⚡ Téléversement du {ext}..."
   },
   "statusImportedFile": {
     "message": "✅ Fichier importé directement !"

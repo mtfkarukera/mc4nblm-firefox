@@ -136,8 +136,38 @@ window.ClipperPDFGenerator = {
     const doc = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
-    const m = 15; // marge
-    const uw = pw - m * 2; // largeur utilisable
+
+    /** Constantes de mise en page — toutes les valeurs magiques centralisées ici. */
+    const PDF_LAYOUT = {
+      margin:    15,       // marge en mm (haut, bas, gauche, droite)
+      font: {
+        meta:    9,        // taille pour les métadonnées (auteur, date, URL)
+        body:    10,       // taille corps de texte standard
+        caption: 11,       // taille pour titres de section meta
+        h3:      12,       // h3-h6
+        h2:      14,       // h2
+        h1:      16,       // h1
+        table:   8,        // taille pour les cellules de tableau
+      },
+      image: {
+        maxWidth:  null,   // calculé dynamiquement : uw
+        maxHeight: null,   // calculé dynamiquement : ph - margin*2 - 10
+        gap:       5,      // espace après image (mm)
+      },
+      line: {
+        gap:       4,      // espace après séparateur <hr>
+        urlGap:    6,      // espace après lien URL
+        intentGap: 5,      // interligne du bloc d'intention
+      },
+      table: {
+        cellPadX:  2,      // padding horizontal cellule
+        cellPadY:  1.5,    // padding vertical cellule
+        minColW:   10,     // largeur min colonne (mm)
+      },
+    };
+
+    const m   = PDF_LAYOUT.margin;
+    const uw  = pw - m * 2; // largeur utilisable
     let y = m; // curseur vertical
 
     // --- Helpers ---

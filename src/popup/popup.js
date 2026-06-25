@@ -74,12 +74,21 @@ function closeKeepAlivePort() {
 }
 
 /** Remplace le contenu d'un container par un placeholder textuel (zéro innerHTML). */
-function setPlaceholder(container, text, style) {
+function setPlaceholder(container, text, className) {
   const div = document.createElement('div');
-  div.className = 'placeholder-text';
-  if (style) div.style.cssText = style;
+  div.className = className ? `placeholder-text ${className}` : 'placeholder-text';
   div.textContent = text;
   container.replaceChildren(div);
+}
+
+/** Affiche un skeleton loader de 3 barres pulsantes dans le container. */
+function showSkeleton(container) {
+  container.replaceChildren();
+  for (let i = 0; i < 3; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'skeleton-item';
+    container.appendChild(bar);
+  }
 }
 
 /** Adds 'btn-disabled' class and syncs aria-disabled for accessibility. */
@@ -265,7 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /** Charge la liste des carnets depuis le background et met à jour l'affichage. */
 function loadNotebooks() {
-    setPlaceholder(uiNotebookList, t('loadingNotebooks'));
+    showSkeleton(uiNotebookList);
     browser.runtime.sendMessage({ action: "GET_NOTEBOOKS" }).then((res) => {
          uiSearchInput.disabled = false;
          if(res && res.notebooks) {
@@ -273,12 +282,12 @@ function loadNotebooks() {
             renderNotebooks(allNotebooksCache);
          } else if (res && res.status === "error") {
             const msg = res.i18nKey ? t(res.i18nKey) : t('errLoadNotebooks');
-            setPlaceholder(uiNotebookList, msg, "color:#d32f2f;font-size:12px;margin:10px");
+            setPlaceholder(uiNotebookList, msg, 'placeholder-error');
          } else {
             setPlaceholder(uiNotebookList, t('noNotebookFound'));
          }
     }).catch(err => {
-         setPlaceholder(uiNotebookList, t('errGeneric').replace('{msg}', err.message), 'color:#d32f2f;');
+         setPlaceholder(uiNotebookList, t('errGeneric').replace('{msg}', err.message), 'placeholder-error');
          uiSearchInput.disabled = true;
     });
 }
@@ -767,7 +776,7 @@ function updateStatus(message, type, linkUrl, showDownload) {
     link.href = linkUrl;
     link.target = '_blank';
     link.textContent = ' ' + t('linkOpenNotebook');
-    link.style.cssText = 'color: #1a73e8; text-decoration: underline; cursor: pointer; margin-left: 4px;';
+    link.className = 'status-link';
     uiStatusMessage.appendChild(link);
   }
   
@@ -776,7 +785,7 @@ function updateStatus(message, type, linkUrl, showDownload) {
     const dlLink = document.createElement('a');
     dlLink.href = '#';
     dlLink.textContent = ' ' + t('linkDownloadFile').replace('{ext}', ext);
-    dlLink.style.cssText = 'color: #34a853; text-decoration: underline; cursor: pointer; margin-left: 8px; font-size: 12px;';
+    dlLink.className = 'download-link';
     dlLink.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();

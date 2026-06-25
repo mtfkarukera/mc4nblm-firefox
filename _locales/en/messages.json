@@ -130,179 +130,236 @@
     "description": "Context menu item to import selected text"
   },
   "popupLabelFormat": {
-    "message": "Import format"
+    "message": "Import format",
+    "description": "Label for the import format selector in the popup"
   },
   "popupStatusReady": {
-    "message": "Ready"
+    "message": "Ready",
+    "description": "Idle status indicator shown in the popup"
   },
   "btnClose": {
-    "message": "✖ Close"
+    "message": "✖ Close",
+    "description": "Label for the close button in the popup"
   },
   "linkOpenNotebook": {
-    "message": "Open notebook →"
+    "message": "Open notebook →",
+    "description": "Link to open the target notebook in NotebookLM"
   },
   "linkDownloadFile": {
-    "message": "Download {ext} ↓"
+    "message": "Download {ext} ↓",
+    "description": "Link to download the generated file; {ext} is the file extension"
   },
   "linkDownloading": {
-    "message": "Downloading..."
+    "message": "Downloading...",
+    "description": "Transient label shown while a file is being downloaded"
   },
   "linkDownloaded": {
-    "message": "✅ Downloaded"
+    "message": "✅ Downloaded",
+    "description": "Label shown after the file has been successfully downloaded"
   },
   "statusConnected": {
-    "message": "Connected ({type})"
+    "message": "Connected ({type})",
+    "description": "Connection status indicator; {type} is the session type"
   },
   "statusDisconnected": {
-    "message": "Disconnected"
+    "message": "Disconnected",
+    "description": "Connection status indicator when not authenticated"
   },
   "errAuth": {
-    "message": "Authentication error."
+    "message": "Authentication error.",
+    "description": "Generic authentication error shown to the user"
   },
   "loadingNotebooks": {
-    "message": "Loading notebooks..."
+    "message": "Loading notebooks...",
+    "description": "Status message while the notebook list is being fetched"
   },
   "errLoadNotebooks": {
-    "message": "Error loading notebooks."
+    "message": "Error loading notebooks.",
+    "description": "Error message when the notebook list cannot be loaded"
   },
   "noNotebookFound": {
-    "message": "No notebook found."
+    "message": "No notebook found.",
+    "description": "Message shown when the notebook list is empty"
   },
   "notebookNotFound": {
-    "message": "Notebook not found."
+    "message": "Notebook not found.",
+    "description": "Error shown when a specific notebook cannot be located"
   },
   "errNoSearchTerm": {
-    "message": "Enter a notebook name in the search field."
+    "message": "Enter a notebook name in the search field.",
+    "description": "Validation message when search is triggered with no input"
   },
   "creatingNotebook": {
-    "message": "Creating notebook \"{title}\"..."
+    "message": "Creating notebook \"{title}\"...",
+    "description": "Status message while a new notebook is being created; {title} is the notebook name"
   },
   "notebookCreated": {
-    "message": "Notebook \"{title}\" created ✅"
+    "message": "Notebook \"{title}\" created ✅",
+    "description": "Confirmation message after a notebook is created; {title} is the notebook name"
   },
   "errGeneric": {
-    "message": "Error: {msg}"
+    "message": "Error: {msg}",
+    "description": "Generic error template; {msg} is the error detail"
   },
   "errNoNotebook": {
-    "message": "Please select a notebook first."
+    "message": "Please select a notebook first.",
+    "description": "Validation error when no notebook is selected before importing"
   },
   "importingSelection": {
-    "message": "📋 Importing selection..."
+    "message": "📋 Importing selection...",
+    "description": "Status message while a text selection is being imported"
   },
   "importingFormat": {
-    "message": "Importing as {label}..."
+    "message": "Importing as {label}...",
+    "description": "Status message during import; {label} is the format name"
   },
   "warnLocalFile": {
-    "message": "⚠️ Local file — direct import is not available."
+    "message": "⚠️ Local file — direct import is not available.",
+    "description": "Warning shown when the user tries to import a local file URL"
   },
   "errDownload": {
-    "message": "❌ Error"
+    "message": "❌ Error",
+    "description": "Short error label shown on a failed download action"
   },
   "errGenericOccurred": {
-    "message": "An error occurred."
+    "message": "An error occurred.",
+    "description": "Fallback error message for unspecified errors"
   },
   "apiChanged": {
-    "message": "The NotebookLM API has been updated by Google. An extension update is required."
+    "message": "The NotebookLM API has been updated by Google. An extension update is required.",
+    "description": "Error shown when the NotebookLM API has changed and the extension needs updating"
   },
   "sessionExpired": {
-    "message": "Session expired. Please sign in again at notebooklm.google.com."
+    "message": "Session expired. Please sign in again at notebooklm.google.com.",
+    "description": "Error shown when the user's session has expired"
   },
   "uploadSessionFailed": {
-    "message": "Upload failed: could not obtain an upload session."
+    "message": "Upload failed: could not obtain an upload session.",
+    "description": "Error shown when the upload session cannot be initialized"
   },
   "timeout": {
-    "message": "Request timed out. Check your connection and try again."
+    "message": "Request timed out. Check your connection and try again.",
+    "description": "Error shown when a network request exceeds the timeout limit"
   },
   "unexpectedError": {
-    "message": "An unexpected error occurred. Check the console for details."
+    "message": "An unexpected error occurred. Check the console for details.",
+    "description": "Fallback error for unexpected exceptions"
   },
   "errFileReader": {
-    "message": "File reading failed."
+    "message": "File reading failed.",
+    "description": "Error shown when the FileReader API fails to read a file"
   },
   "errNoCapture": {
-    "message": "No capture available."
+    "message": "No capture available.",
+    "description": "Error shown when there is no pending capture to process"
   },
   "errCaptureInProgress": {
     "message": "A capture is already in progress. Please wait.",
     "description": "Error shown when user tries to start a new capture while one is running"
   },
   "statusCreatingNb": {
-    "message": "Creating notebook..."
+    "message": "Creating notebook...",
+    "description": "Status message while a notebook is being auto-created"
   },
   "statusUploadSelection": {
-    "message": "📋 Uploading selection..."
+    "message": "📋 Uploading selection...",
+    "description": "Status message while a text selection is being uploaded"
   },
   "statusImportedSelection": {
-    "message": "✅ Selection imported!"
+    "message": "✅ Selection imported!",
+    "description": "Confirmation message after a selection is successfully imported"
   },
   "notifSelectionTitle": {
-    "message": "📎 Clip selection to NotebookLM"
+    "message": "📎 Clip selection to NotebookLM",
+    "description": "Title of the browser notification shown after clipping a selection"
   },
   "notifSelectionCaptured": {
-    "message": "Selection captured ✓"
+    "message": "Selection captured ✓",
+    "description": "Notification body confirming the selection was captured"
   },
   "notifSelectionMsg": {
-    "message": "Click the NotebookLM Web Clipper button to choose a notebook."
+    "message": "Click the NotebookLM Web Clipper button to choose a notebook.",
+    "description": "Notification body prompting the user to open the popup after clipping"
   },
   "notifSuccessMsg": {
-    "message": "\"{title}\" added as {format} successfully!"
+    "message": "\"{title}\" added as {format} successfully!",
+    "description": "Notification body on successful import; {title} is the notebook name, {format} is the format"
   },
   "statusFetchSession": {
-    "message": "Retrieving Personal Session..."
+    "message": "Retrieving Personal Session...",
+    "description": "Status message while the personal session token is being fetched"
   },
   "statusScreenshot": {
-    "message": "📸 Capturing viewport..."
+    "message": "📸 Capturing viewport...",
+    "description": "Status message while the viewport screenshot is being taken"
   },
   "statusUploadScreenshot": {
-    "message": "📸 Uploading screenshot..."
+    "message": "📸 Uploading screenshot...",
+    "description": "Status message while the screenshot is being uploaded"
   },
   "statusImportedScreenshot": {
-    "message": "✅ Screenshot imported!"
+    "message": "✅ Screenshot imported!",
+    "description": "Confirmation message after a screenshot is successfully imported"
   },
   "statusDownloadFile": {
-    "message": "⚡ Downloading file..."
+    "message": "⚡ Downloading file...",
+    "description": "Status message while the original file is being downloaded"
   },
   "statusUploadFile": {
-    "message": "⚡ Uploading {ext}..."
+    "message": "⚡ Uploading {ext}...",
+    "description": "Status message while a file is being uploaded; {ext} is the file extension"
   },
   "statusImportedFile": {
-    "message": "✅ File imported directly!"
+    "message": "✅ File imported directly!",
+    "description": "Confirmation message after a file is imported via direct import"
   },
   "statusDrive": {
-    "message": "☁️ Connecting to Google Drive..."
+    "message": "☁️ Connecting to Google Drive...",
+    "description": "Status message while connecting to Google Drive"
   },
   "statusImportedDrive": {
-    "message": "✅ Google Drive document synced!"
+    "message": "✅ Google Drive document synced!",
+    "description": "Confirmation message after a Google Drive document is imported"
   },
   "statusYoutube": {
-    "message": "YouTube detected → native import..."
+    "message": "YouTube detected → native import...",
+    "description": "Status message when a YouTube URL is detected and native import begins"
   },
   "statusSendUrl": {
-    "message": "Sending URL to NotebookLM..."
+    "message": "Sending URL to NotebookLM...",
+    "description": "Status message while the page URL is being sent to NotebookLM"
   },
   "statusImportedYoutube": {
-    "message": "✅ YouTube video imported!"
+    "message": "✅ YouTube video imported!",
+    "description": "Confirmation message after a YouTube video is successfully imported"
   },
   "statusImportedUrl": {
-    "message": "✅ URL imported!"
+    "message": "✅ URL imported!",
+    "description": "Confirmation message after a URL is successfully imported"
   },
   "statusDomCapture": {
-    "message": "Requesting DOM capture..."
+    "message": "Requesting DOM capture...",
+    "description": "Status message while the DOM capture is being requested from the content script"
   },
   "statusSendMarkdown": {
-    "message": "Sending Markdown (text source)..."
+    "message": "Sending Markdown (text source)...",
+    "description": "Status message while Markdown content is being sent to NotebookLM"
   },
   "statusImportedMarkdown": {
-    "message": "✅ Markdown imported!"
+    "message": "✅ Markdown imported!",
+    "description": "Confirmation message after Markdown is successfully imported"
   },
   "statusCheckQuota": {
-    "message": "Checking security quotas..."
+    "message": "Checking security quotas...",
+    "description": "Status message while API security quotas are being verified"
   },
   "statusSendPdf": {
-    "message": "Sending PDF (Google Servers)..."
+    "message": "Sending PDF (Google Servers)...",
+    "description": "Status message while a PDF is being sent via Google's servers"
   },
   "statusImportedPdf": {
-    "message": "✅ PDF imported!"
+    "message": "✅ PDF imported!",
+    "description": "Confirmation message after a PDF is successfully imported"
   },
   "errGetNotebooks": {
     "message": "Could not retrieve your notebooks. Check your connection and reload.",
@@ -325,34 +382,44 @@
     "description": "Error when script injection fails on a restricted page"
   },
   "popupTitleAccountSwitcher": {
-    "message": "Switch Google account"
+    "message": "Switch Google account",
+    "description": "Title of the account switcher panel in the popup"
   },
   "statusConnecting": {
-    "message": "Connecting..."
+    "message": "Connecting...",
+    "description": "Status message while the extension is establishing a connection"
   },
   "btnCreateNotebookTitle": {
-    "message": "Create a new notebook"
+    "message": "Create a new notebook",
+    "description": "Tooltip for the create notebook button"
   },
   "btnPdfTitle": {
-    "message": "Embedded images, visual layout"
+    "message": "Embedded images, visual layout",
+    "description": "Tooltip describing the PDF export mode"
   },
   "btnMarkdownTitle": {
-    "message": "Perfect tables, ultra-light, native Gemini"
+    "message": "Perfect tables, ultra-light, native Gemini",
+    "description": "Tooltip describing the Markdown export mode"
   },
   "btnUrlTitle": {
-    "message": "Instant import — NotebookLM scrapes the page"
+    "message": "Instant import — NotebookLM scrapes the page",
+    "description": "Tooltip describing the URL import mode"
   },
   "btnScreenshotTitle": {
-    "message": "Capture visible viewport as PNG"
+    "message": "Capture visible viewport as PNG",
+    "description": "Tooltip describing the screenshot capture mode"
   },
   "btnDriveTitle": {
-    "message": "Native Google Drive sync"
+    "message": "Native Google Drive sync",
+    "description": "Tooltip describing the Google Drive import mode"
   },
   "btnDirectTitle": {
-    "message": "Import the original file as is"
+    "message": "Import the original file as is",
+    "description": "Tooltip describing the direct file import mode"
   },
   "btnClearSelectionTitle": {
-    "message": "Cancel"
+    "message": "Cancel",
+    "description": "Tooltip for the cancel/clear selection button"
   },
   "metaUntitledDocument": {
     "message": "Untitled Document",

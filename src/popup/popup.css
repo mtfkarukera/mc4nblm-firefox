@@ -85,6 +85,8 @@ body {
   background-color: var(--bg-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-main);
+  line-height: 1.5;
+  overflow-y: auto;
 }
 
 /* Glassmorphism panel base */
@@ -160,20 +162,43 @@ input[type="text"]:focus-visible {
 
 /* Notebook List */
 .notebook-list {
-  margin-top: 12px;
-  max-height: 110px;
+  margin-top: var(--space-md);
+  max-height: 160px;
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--bg-element);
-  padding: 4px;
+  padding: var(--space-xs);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 .placeholder-text {
-  padding: 12px;
+  padding: var(--space-md);
   text-align: center;
   font-size: 12px;
   color: var(--text-muted);
 }
+/* Placeholder d'erreur — remplace les couleurs hardcodées dans popup.js */
+.placeholder-error {
+  color: var(--status-error);
+  font-size: 12px;
+  margin: 10px;
+}
+/* Skeleton loader — affiché pendant le chargement des carnets */
+@keyframes skeleton-pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+.skeleton-item {
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background: var(--border-color);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+  margin: var(--space-xs) 0;
+}
+.skeleton-item:nth-child(2) { animation-delay: 0.2s; width: 85%; }
+.skeleton-item:nth-child(3) { animation-delay: 0.4s; width: 70%; }
 .notebook-item {
   padding: 8px 12px;
   font-size: 13px;
@@ -507,4 +532,18 @@ footer { margin-bottom: 0; padding: 8px 12px; text-align: center; }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+/* Liens d'action dans la zone de statut */
+.status-link {
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: var(--space-xs);
+}
+.download-link {
+  color: var(--status-success);
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: var(--space-sm);
+  font-size: 12px;
 }
