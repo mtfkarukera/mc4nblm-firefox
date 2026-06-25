@@ -226,6 +226,10 @@
   "errNoCapture": {
     "message": "No hay captura disponible."
   },
+  "errCaptureInProgress": {
+    "message": "Ya hay una captura en curso. Por favor, espera.",
+    "description": "Error shown when user tries to start a new capture while one is running"
+  },
   "statusCreatingNb": {
     "message": "Creando cuaderno..."
   },

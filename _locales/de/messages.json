@@ -222,6 +222,10 @@
   "errNoCapture": {
     "message": "Keine Erfassung verfügbar."
   },
+  "errCaptureInProgress": {
+    "message": "Eine Erfassung läuft bereits. Bitte warten.",
+    "description": "Error shown when user tries to start a new capture while one is running"
+  },
   "statusCreatingNb": {
     "message": "Notizbuch wird erstellt..."
   },

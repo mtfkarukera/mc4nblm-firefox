@@ -48,6 +48,30 @@ let allNotebooksCache = [];
 let currentFormat = "pdf";
 let detectedFileInfo = null;
 let pendingSelection = null; // Sélection en attente (capturée via le menu contextuel)
+let keepAlivePort = null;   // Port runtime maintenant l'Event Page active pendant les captures
+let safetyResetTimer = null; // Timeout de sécurité UI (120s)
+
+/**
+ * Ouvre un Port vers le background pour empêcher Firefox de décharger l'Event Page.
+ * Doit être appelé avant tout START_CAPTURE et fermé après réponse ou erreur.
+ */
+function openKeepAlivePort() {
+  if (keepAlivePort) return; // Déjà ouvert
+  try {
+    keepAlivePort = browser.runtime.connect({ name: 'popup-keepalive' });
+    keepAlivePort.onDisconnect.addListener(() => { keepAlivePort = null; });
+  } catch (e) {
+    keepAlivePort = null;
+  }
+}
+
+/** Ferme le Port keepAlive. */
+function closeKeepAlivePort() {
+  if (keepAlivePort) {
+    try { keepAlivePort.disconnect(); } catch {}
+    keepAlivePort = null;
+  }
+}
 
 /** Remplace le contenu d'un container par un placeholder textuel (zéro innerHTML). */
 function setPlaceholder(container, text, style) {
@@ -378,13 +402,17 @@ function startCaptureProcess() {
      btnCustomSpinner.classList.remove('hidden');
      updateStatus(t('importingSelection'), "info");
      
+     openKeepAlivePort();
+     // Timeout de sécurité UI : si le background ne répond pas en 120s, réinitialiser
+     safetyResetTimer = setTimeout(() => { closeKeepAlivePort(); resetUI(); }, 120_000);
+     
      browser.runtime.sendMessage({
        action: "START_CAPTURE",
        notebookId: currentSelectedNotebookId,
        format: 'selection',
        selectionData: pendingSelection,
        intentNote: intentInput.value.trim() || null
-     });
+     }).catch(() => { closeKeepAlivePort(); resetUI(); });
      
      // Nettoyer la sélection en attente
      browser.storage.local.remove('nwc_pending_selection');
@@ -400,12 +428,16 @@ function startCaptureProcess() {
    const label = formatLabels[currentFormat] || currentFormat;
    updateStatus(t('importingFormat').replace('{label}', label), "info");
 
+   openKeepAlivePort();
+   // Timeout de sécurité UI : si le background ne répond pas en 120s, réinitialiser
+   safetyResetTimer = setTimeout(() => { closeKeepAlivePort(); resetUI(); }, 120_000);
+
    browser.runtime.sendMessage({ 
      action: "START_CAPTURE", 
      notebookId: currentSelectedNotebookId,
      format: currentFormat,
      intentNote: intentInput.value.trim() || null
-   });
+   }).catch(() => { closeKeepAlivePort(); resetUI(); });
 }
 
 /**
@@ -704,6 +736,9 @@ function resetUI() {
   btnCapture.disabled = false;
   uiSearchInput.disabled = false;
   btnCustomSpinner.classList.add('hidden');
+  // Nettoyer le keepAlive et le timer de sécurité
+  closeKeepAlivePort();
+  if (safetyResetTimer) { clearTimeout(safetyResetTimer); safetyResetTimer = null; }
 }
 
 /** Met à jour le message de statut, avec lien optionnel vers le carnet et bouton de téléchargement. */

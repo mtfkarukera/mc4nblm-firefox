@@ -226,6 +226,10 @@
   "errNoCapture": {
     "message": "Không có ảnh chụp nào."
   },
+  "errCaptureInProgress": {
+    "message": "Đang có một lần thu thập. Vui lòng đợi.",
+    "description": "Error shown when user tries to start a new capture while one is running"
+  },
   "statusCreatingNb": {
     "message": "Đang tạo sổ tay..."
   },

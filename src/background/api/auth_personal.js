@@ -38,18 +38,25 @@ export async function getPersonalAuthCookies() {
  * @throws  {Error}                    - Si la session est expirée (401/403) ou si le token est absent de la page.
  */
 export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
+  // Vérification TTL : si le token a moins de 5 minutes, le réutiliser
+  const stored = await browser.storage.local.get(['nblm_csrf', 'nblm_csrf_ts']);
+  if (stored.nblm_csrf && stored.nblm_csrf_ts && (Date.now() - stored.nblm_csrf_ts < 5 * 60 * 1000)) {
+    return stored.nblm_csrf;
+  }
+
   // Le token SNlM0e est indispensable pour la signature des charges utiles batchexecute
   const response = await fetch(`https://notebooklm.google.com/?authuser=${authuserIndex}`, {
     method: 'GET',
     headers: {
        'Cookie': cookieString,
        'User-Agent': navigator.userAgent
-    }
+    },
+    signal: AbortSignal.timeout(15_000)
   });
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      await browser.storage.local.remove('nblm_personal_cookie');
+      await browser.storage.local.remove(['nblm_personal_cookie', 'nblm_csrf', 'nblm_csrf_ts']);
       throw new Error("Session NotebookLM expirée (HTTP 401/403).");
     }
     throw new Error(`HTTP Error ${response.status}`);
@@ -61,7 +68,7 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
   const match = html.match(/"SNlM0e":"([^"]+)"/);
   if (match && match[1]) {
     const csrfToken = match[1];
-    await browser.storage.local.set({ nblm_csrf: csrfToken });
+    await browser.storage.local.set({ nblm_csrf: csrfToken, nblm_csrf_ts: Date.now() });
     return csrfToken;
   } else {
     throw new Error("Token CSRF SNlM0e introuvable sur la page.");

@@ -226,6 +226,10 @@
   "errNoCapture": {
     "message": "Aucune capture disponible."
   },
+  "errCaptureInProgress": {
+    "message": "Une capture est déjà en cours. Veuillez patienter.",
+    "description": "Error shown when user tries to start a new capture while one is running"
+  },
   "statusCreatingNb": {
     "message": "Création du carnet..."
   },

@@ -226,6 +226,10 @@
   "errNoCapture": {
     "message": "Pa ni ayen nou pé chajé, la."
   },
+  "errCaptureInProgress": {
+    "message": "Gen kaptir ka ap fèt. Tanpri tann.",
+    "description": "Error shown when user tries to start a new capture while one is running"
+  },
   "statusCreatingNb": {
     "message": "Nou ka fè kayé-la..."
   },

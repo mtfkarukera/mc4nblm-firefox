@@ -222,6 +222,10 @@
   "errNoCapture": {
     "message": "No capture available."
   },
+  "errCaptureInProgress": {
+    "message": "A capture is already in progress. Please wait.",
+    "description": "Error shown when user tries to start a new capture while one is running"
+  },
   "statusCreatingNb": {
     "message": "Creating notebook..."
   },

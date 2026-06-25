@@ -53,10 +53,45 @@ function sanitizeErrorMessage(message) {
     );
 }
 
-// Dernière capture (stockée en mémoire pour téléchargement local)
-let lastCaptureData = null;    // base64 PDF ou texte Markdown
-let lastCaptureFilename = null;
-let lastCaptureFormat = null;  // "pdf" ou "md"
+// Capture en cours (verrou anti-concurrent)
+let captureInProgress = false;
+
+/**
+ * Stocke une capture dans browser.storage.session pour survivre aux rechargements
+ * de l'Event Page. TTL de 10 minutes pour éviter les fuites mémoire.
+ *
+ * @param {string|null} data     - Données de capture (base64 PDF ou texte MD).
+ * @param {string|null} filename - Nom de fichier sans extension.
+ * @param {string|null} format   - "pdf" ou "md".
+ */
+async function saveCapture(data, filename, format) {
+    await browser.storage.session.set({
+        nwc_last_capture: { data, filename, format, ts: Date.now() }
+    });
+}
+
+/**
+ * Récupère la dernière capture depuis browser.storage.session.
+ * Retourne null si absente ou expirée (> 10 minutes).
+ *
+ * @returns {Promise<{data: string, filename: string, format: string}|null>}
+ */
+async function getCapture() {
+    const { nwc_last_capture } = await browser.storage.session.get('nwc_last_capture');
+    if (!nwc_last_capture) return null;
+    if (Date.now() - nwc_last_capture.ts > 10 * 60 * 1000) {
+        await browser.storage.session.remove('nwc_last_capture');
+        return null;
+    }
+    return nwc_last_capture;
+}
+
+/**
+ * Efface la capture stockée en session.
+ */
+async function clearCapture() {
+    await browser.storage.session.remove('nwc_last_capture');
+}
 
 // =====================================================================
 // INJECTION DYNAMIQUE DES SCRIPTS (Lazy Loading)
@@ -409,6 +444,8 @@ if (browser.contextMenus?.onClicked) {
  * @returns {true}               - Indique systématiquement une réponse asynchrone.
  */
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    // Sécurité : valider que le message provient bien de cette extension
+    if (sender.id && sender.id !== browser.runtime.id) return false;
 
     if (message.action === "GET_AUTH_STATUS") {
         browser.cookies.getAll({ url: "https://notebooklm.google.com/" }).then(cookies => {
@@ -436,7 +473,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 sendResponse({ accounts, activeIndex });
             } catch (err) {
                 console.error('[MC] GET_ACCOUNTS:', sanitizeErrorMessage(err.message));
-                sendResponse({ error: err.message, accounts: [] });
+                // Sanitiser err.message avant de l'exposer au popup (peut contenir des tokens)
+                sendResponse({ error: sanitizeErrorMessage(err.message), accounts: [] });
             }
         })();
         return true;
@@ -502,21 +540,19 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Proxy CORS pour télécharger les images sans bloquer jsPDF
     if (message.action === "FETCH_IMAGE") {
         (async () => {
+            const { url } = message;
+            // Sécurité : rejeter les schémas non-HTTP pour prévenir les abus SSRF
+            if (!url || !(/^https?:\/\//.test(url))) {
+                sendResponse({ error: 'URL invalide ou schéma non supporté.' });
+                return;
+            }
             try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
-                const response = await fetch(message.url, { signal: controller.signal });
-                clearTimeout(timeout);
-                if (!response.ok) {
-                    sendResponse({ error: `HTTP ${response.status}` });
-                    return;
-                }
-                const blob = await response.blob();
+                const resp = await fetch(url, { credentials: 'include', signal: AbortSignal.timeout(10_000) });
+                if (!resp.ok) { sendResponse({ error: `HTTP ${resp.status}` }); return; }
+                const blob = await resp.blob();
                 const reader = new FileReader();
-                reader.onloadend = () => {
-                    sendResponse({ data: reader.result });
-                };
-                reader.onerror = () => sendResponse({ error: "FileReader échoué" });
+                reader.onloadend = () => sendResponse({ data: reader.result });
+                reader.onerror = () => sendResponse({ error: 'FileReader failed' });
                 reader.readAsDataURL(blob);
             } catch (err) {
                 sendResponse({ error: err.message });
@@ -527,21 +563,22 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Téléchargement local de la dernière capture (PDF ou Markdown)
     if (message.action === "DOWNLOAD_CAPTURE") {
-        if (!lastCaptureData) {
-            sendResponse({ error: browser.i18n.getMessage('errNoCapture') });
-            return true;
-        }
         (async () => {
+            const capture = await getCapture();
+            if (!capture) {
+                sendResponse({ error: browser.i18n.getMessage('errNoCapture') });
+                return;
+            }
             try {
                 let blobUrl;
                 let ext;
 
-                if (lastCaptureFormat === "md") {
-                    const blob = new Blob([lastCaptureData], { type: 'text/markdown; charset=utf-8' });
+                if (capture.format === "md") {
+                    const blob = new Blob([capture.data], { type: 'text/markdown; charset=utf-8' });
                     blobUrl = URL.createObjectURL(blob);
                     ext = '.md';
                 } else {
-                    const base64 = lastCaptureData.split(',')[1];
+                    const base64 = capture.data.split(',')[1];
                     const byteChars = atob(base64);
                     const byteArr = new Uint8Array(byteChars.length);
                     for (let i = 0; i < byteChars.length; i++) {
@@ -555,12 +592,27 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 const platformInfo = await browser.runtime.getPlatformInfo();
                 const isMobile = platformInfo.os === 'android';
 
-                await browser.downloads.download({
+                const downloadId = await browser.downloads.download({
                     url: blobUrl,
-                    filename: (lastCaptureFilename || 'capture') + ext,
+                    filename: (capture.filename || 'capture') + ext,
                     saveAs: !isMobile
                 });
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+
+                // Révoquer l'URL dès que le téléchargement est terminé (ou échoue)
+                const onChanged = (delta) => {
+                    if (delta.id !== downloadId) return;
+                    if (delta.state && (delta.state.current === 'complete' || delta.state.current === 'interrupted')) {
+                        URL.revokeObjectURL(blobUrl);
+                        browser.downloads.onChanged.removeListener(onChanged);
+                    }
+                };
+                browser.downloads.onChanged.addListener(onChanged);
+                // Fallback : révoquer après 30s si l'événement n'est jamais reçu
+                setTimeout(() => {
+                    URL.revokeObjectURL(blobUrl);
+                    browser.downloads.onChanged.removeListener(onChanged);
+                }, 30_000);
+
                 sendResponse({ ok: true });
             } catch (err) {
                 sendResponse({ error: err.message });
@@ -603,8 +655,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.action === "START_CAPTURE") {
+        // Verrou anti-capture concurrente
+        if (captureInProgress) {
+            sendResponse({ status: "error", code: "CAPTURE_IN_PROGRESS", i18nKey: "errCaptureInProgress" });
+            return true;
+        }
         // Import de sélection : pipeline simplifié (texte → addTextSource)
         if (message.format === 'selection' && message.selectionData) {
+            captureInProgress = true;
             (async () => {
                 try {
                     const sel = message.selectionData;
@@ -639,7 +697,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                     await addTextSource(finalNotebookId, sourceTitle, content, activeIndex);
 
-                    // Générer le .md de la sélection pour téléchargement local
+                    // Persister la capture en session pour téléchargement local
                     const mdContent = [
                       `${browser.i18n.getMessage('labelSource')} ${sel.pageUrl}`,
                       `${browser.i18n.getMessage('labelTitle')} ${sel.pageTitle}`,
@@ -650,9 +708,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                       sel.text
                     ].join('\n');
 
-                    lastCaptureData = mdContent;
-                    lastCaptureFilename = `${cleanTitle}.md`;
-                    lastCaptureFormat = 'md';
+                    await saveCapture(mdContent, cleanTitle, 'md');
 
                     const notebookUrl = `https://notebooklm.google.com/notebook/${finalNotebookId}`;
                     notifyUI("STATUS_UPDATE", {
@@ -675,10 +731,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         i18nKey: "errSelectionFailed",
                         code: "UNKNOWN"
                     });
+                } finally {
+                    captureInProgress = false;
                 }
             })();
         } else {
             // Formats classiques : PDF, MD, URL, Screenshot, Direct
+            captureInProgress = true;
             (async () => {
                 const format = message.format || "pdf";
                 const scripts = INJECTION_PIPELINE[format] ?? [];
@@ -690,13 +749,15 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             await injectScriptsSequentially(tabs[0].id, scripts);
                         } catch (err) {
                             if (err instanceof InjectionError) {
+                                captureInProgress = false;
                                 sendResponse({
                                     status: "error",
                                     code: "INJECTION_FAILED",
                                     i18nKey: "errInjectionFailed"
                                 });
-                                return true;
+                                return;
                             }
+                            captureInProgress = false;
                             throw err;
                         }
                     }
@@ -710,8 +771,15 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             i18nKey: "errWorkflowFailed",
                             code: "UNKNOWN"
                         });
+                    })
+                    .finally(() => {
+                        captureInProgress = false;
                     });
-            })();
+            })().catch(err => {
+                captureInProgress = false;
+                console.error('[MC] START_CAPTURE IIFE:', sanitizeErrorMessage(err.message));
+                notifyUI("STATUS_UPDATE", { status: "error", i18nKey: "errWorkflowFailed", code: "UNKNOWN" });
+            });
         }
     }
 
@@ -731,6 +799,21 @@ function notifyUI(action, payload) {
         // La popup est sûrement fermée, on ignore l'erreur
     });
 }
+
+/**
+ * Listener de connexion Port : maintient l'Event Page actif pendant les captures longues.
+ * La popup ouvre un Port nommé "popup-keepalive" avant chaque START_CAPTURE et
+ * le ferme dès que la réponse est reçue ou que l'opération échoue.
+ */
+browser.runtime.onConnect.addListener((port) => {
+    if (port.name !== 'popup-keepalive') return;
+    // Pas besoin d'écouter de messages — la connexion ouverte suffit à maintenir le SW actif
+    port.onDisconnect.addListener(() => {
+        // La popup a fermé le port (capture terminée, erreur, ou popup fermée)
+        // Aucune action nécessaire ici
+    });
+});
+
 
 /**
  * Orchestre le workflow complet de capture et d'upload pour les formats
@@ -803,9 +886,30 @@ async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentN
     } else if (format === "direct") {
         notifyUI("STATUS_UPDATE", { i18nKey: "statusDownloadFile", status: "info" });
 
+        // Vérification préalable de la taille via Content-Length (avant téléchargement)
+        let headResponse;
+        try {
+            headResponse = await fetch(pageUrl, {
+                method: 'HEAD',
+                credentials: 'include',
+                signal: AbortSignal.timeout(10_000)
+            });
+        } catch {
+            // HEAD non supporté — on continue sans vérification préalable
+        }
+        if (headResponse?.ok) {
+            const contentLength = parseInt(headResponse.headers.get('content-length') || '0', 10);
+            if (contentLength > 200 * 1024 * 1024) {
+                throw new Error("Upload refusé : Le fichier dépasse la limite de 200 MB.");
+            }
+        }
+
         let fileResponse;
         try {
-            fileResponse = await fetch(pageUrl, { credentials: 'include' });
+            fileResponse = await fetch(pageUrl, {
+                credentials: 'include',
+                signal: AbortSignal.timeout(120_000)
+            });
         } catch (fetchErr) {
             throw new Error(`Impossible de récupérer le fichier. Le serveur bloque le téléchargement.`);
         }
@@ -916,9 +1020,7 @@ async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentN
         const capturedData = response.payload;
         const capturedFormat = response.format || format;
 
-        lastCaptureData = capturedData;
-        lastCaptureFilename = cleanTitle;
-        lastCaptureFormat = capturedFormat;
+        await saveCapture(capturedData, cleanTitle, capturedFormat);
 
         if (capturedFormat === "md") {
             notifyUI("STATUS_UPDATE", { i18nKey: "statusSendMarkdown", status: "info" });
