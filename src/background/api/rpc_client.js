@@ -263,14 +263,16 @@ export function validateAndExtractRpcResponse(rawResponse, rpcId) {
  * @throws  {RpcApiChangedError}       - Si la structure de la réponse est inattendue.
  */
 export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0) {
-    const data = await browser.storage.local.get(['nblm_personal_cookie', 'nblm_csrf']);
-    if (!data.nblm_personal_cookie || !data.nblm_csrf) {
+    const csrfKey = `nblm_csrf_${authuserIndex}`;
+    const data = await browser.storage.local.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+    const csrfToken = data[csrfKey] || data.nblm_csrf;
+    if (!data.nblm_personal_cookie || !csrfToken) {
         throw new Error("Authentification personnelle non finalisée.");
     }
 
     // Encoder la requête RPC
     const rpcRequest = encodeRpcRequest(rpcId, jsonArgs);
-    const body = buildRequestBody(rpcRequest, data.nblm_csrf);
+    const body = buildRequestBody(rpcRequest, csrfToken);
     const queryString = buildQueryParams(rpcId);
     const endpoint = `https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuserIndex}`;
 
@@ -285,7 +287,7 @@ export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0) {
 
     if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
-            await browser.storage.local.remove(['nblm_personal_cookie', 'nblm_csrf']);
+            await browser.storage.local.remove(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
             throw new Error("Jeton RPC rejeté (401/403). Veuillez rafraîchir votre session NotebookLM.");
         }
         throw new Error(`Erreur réseau batchexecute: ${response.status}`);
@@ -520,8 +522,10 @@ export async function addYouTubeSource(notebookId, url, authuserIndex = 0) {
  */
 export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) {
 
-    const data = await browser.storage.local.get(['nblm_personal_cookie', 'nblm_csrf']);
-    if (!data.nblm_personal_cookie || !data.nblm_csrf) {
+    const csrfKey = `nblm_csrf_${authuserIndex}`;
+    const data = await browser.storage.local.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+    const csrfToken = data[csrfKey] || data.nblm_csrf;
+    if (!data.nblm_personal_cookie || !csrfToken) {
         throw new Error("Authentification personnelle non finalisée.");
     }
 

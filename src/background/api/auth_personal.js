@@ -58,7 +58,7 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      await browser.storage.local.remove(['nblm_personal_cookie', csrfKey, csrfTsKey]);
+      await browser.storage.local.remove(['nblm_personal_cookie', csrfKey, csrfTsKey, 'nblm_csrf', 'nblm_csrf_ts']);
       throw new Error("Session NotebookLM expirée (HTTP 401/403).");
     }
     throw new Error(`HTTP Error ${response.status}`);
@@ -70,7 +70,12 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
   const match = html.match(/"SNlM0e":"([^"]+)"/);
   if (match && match[1]) {
     const csrfToken = match[1];
-    await browser.storage.local.set({ [csrfKey]: csrfToken, [csrfTsKey]: Date.now() });
+    await browser.storage.local.set({ 
+      [csrfKey]: csrfToken, 
+      [csrfTsKey]: Date.now(),
+      nblm_csrf: csrfToken,
+      nblm_csrf_ts: Date.now()
+    });
     return csrfToken;
   } else {
     throw new Error("Token CSRF SNlM0e introuvable sur la page.");

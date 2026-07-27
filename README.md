@@ -228,6 +228,10 @@ mc4nblm-firefox/
 
 ## 📋 Changelog récent
 
+### v6.2.2 — Correctif Critique Récupération Carnets (Juillet 2026)
+
+- **Fix critique (ROB-2)** : correction du mismatch de clés de stockage CSRF entre `auth_personal.js` (`nblm_csrf_${authuserIndex}`) et `rpc_client.js` (`sendBatchExecute`/`uploadBlob`). Le jeton CSRF est désormais enregistré sous les deux clés (indexée et globale), résolvant définitivement l'erreur "Impossible de récupérer vos carnets".
+
 ### v6.2.1 — Rebranding Gemini Notebook — Juillet 2026
 
 #### 🏷️ Marque & Nommage

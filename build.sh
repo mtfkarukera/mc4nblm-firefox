@@ -12,13 +12,13 @@ echo "🔨 Building ${NAME}-${VERSION}.xpi …"
 npx web-ext build --source-dir . --overwrite-dest
 
 # Renommer le .zip en .xpi
-ZIP="${DIST}/${NAME}-${VERSION}.zip"
-XPI="${DIST}/${NAME}-${VERSION}.xpi"
+ZIP=$(ls -t ${DIST}/*.zip 2>/dev/null | head -n 1)
 
-if [ -f "$ZIP" ]; then
+if [ -n "$ZIP" ] && [ -f "$ZIP" ]; then
+  XPI="${ZIP%.zip}.xpi"
   mv "$ZIP" "$XPI"
   echo "✅ ${XPI} prêt ($(du -h "$XPI" | cut -f1))"
 else
-  echo "❌ Fichier ZIP introuvable : $ZIP"
+  echo "❌ Fichier ZIP introuvable dans ${DIST}/"
   exit 1
 fi
