@@ -228,6 +228,12 @@ mc4nblm-firefox/
 
 ## 📋 Changelog récent
 
+### v6.2.1 — Rebranding Gemini Notebook — Juillet 2026
+
+#### 🏷️ Marque & Nommage
+- Intégration complète de la dénomination officielle **Gemini Notebook** (anciennement NotebookLM) à travers l'extension (manifest, UI, popup, 6 locales, documentation et kit de soumission AMO)
+- Preservation de la mention *(anciennement NotebookLM)* dans les métadonnées et descriptions pour l'indexation SEO / AMO
+
 ### v6.2.0 — Audit Sécurité, Robustesse & Design — Juillet 2026
 
 #### 🔐 Sécurité
