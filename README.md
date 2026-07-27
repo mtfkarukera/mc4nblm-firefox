@@ -1,6 +1,6 @@
-# 📎 Magic Clipper for NotebookLM — Extension Firefox MV3
+# 📎 Magic Clipper for Gemini Notebook — Extension Firefox MV3
 
-Capturez le contenu de n'importe quelle page web et importez-le directement dans un carnet **Google NotebookLM** — en **PDF**, **Markdown**, **URL directe**, **Screenshot**, **Import Direct**, **Sélection de texte** ou **☁️ Google Drive natif**. Compatible **Firefox Desktop et Android**. Optimisé pour l'analyse par Gemini (grounding IA intégré).
+Capturez le contenu de n'importe quelle page web et importez-le directement dans un carnet **Google Gemini Notebook** (anciennement NotebookLM) — en **PDF**, **Markdown**, **URL directe**, **Screenshot**, **Import Direct**, **Sélection de texte** ou **☁️ Google Drive natif**. Compatible **Firefox Desktop et Android**. Optimisé pour l'analyse par Gemini (grounding IA intégré).
 
 ---
 
@@ -16,7 +16,7 @@ Capturez le contenu de n'importe quelle page web et importez-le directement dans
 | **Extraction Readability** | Contenu principal uniquement via [Readability.js](https://github.com/mozilla/readability) |
 | **Images haute fidélité** | Data URIs + proxy CORS intégrés au PDF via `addImage()` |
 | **Tables pipe-delimited** | En mode Markdown, tables parfaitement structurées pour Gemini |
-| **Import URL natif** | NotebookLM scrape la page lui-même — zéro traitement client |
+| **Import URL natif** | Gemini Notebook scrape la page lui-même — zéro traitement client |
 | **Grounding IA** | Titre, auteur, site, URL et date injectés dans les métadonnées |
 | **Upload resumable** | Protocole Google 3 étapes (register → start → finalize) |
 | **Téléchargement local** | Bouton "Télécharger ↓" après import (.pdf ou .md) |
@@ -43,7 +43,7 @@ Capturez le contenu de n'importe quelle page web et importez-le directement dans
 
 ### ⚡ Formats supportés par l'Import Direct
 
-L'Import Direct détecte automatiquement le type de fichier (via l'extension URL + `HEAD` request) et l'importe tel quel dans NotebookLM :
+L'Import Direct détecte automatiquement le type de fichier (via l'extension URL + `HEAD` request) et l'importe tel quel dans Gemini Notebook :
 
 | Catégorie | Formats |
 | --- | --- |
@@ -54,7 +54,7 @@ L'Import Direct détecte automatiquement le type de fichier (via l'extension URL
 
 ### 📋 Clip de sélection (menu contextuel)
 
-Sélectionnez du texte sur n'importe quelle page, faites un clic droit → **« 📎 Clipper la sélection dans NotebookLM »**. Le texte est capturé avec son formatage HTML, et la popup s'ouvre pour choisir le carnet cible. Les métadonnées de grounding (URL source, titre, date) sont automatiquement injectées.
+Sélectionnez du texte sur n'importe quelle page, faites un clic droit → **« 📎 Clipper la sélection dans Gemini Notebook »**. Le texte est capturé avec son formatage HTML, et la popup s'ouvre pour choisir le carnet cible. Les métadonnées de grounding (URL source, titre, date) sont automatiquement injectées.
 
 ---
 
@@ -62,7 +62,7 @@ Sélectionnez du texte sur n'importe quelle page, faites un clic droit → **« 
 
 ```text
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
-│   Popup (UI)    │────▶│  Background.js   │────▶│  NotebookLM API     │
+│   Popup (UI)    │────▶│  Background.js   │────▶│  Gemini Notebook API│
 │  popup.html/js  │     │  (Event Page)    │     │  /batchexecute      │
 │  7 modes import │     │  Routeur central │     │  /upload/_/         │
 │  Sélecteur i18n │     │  CORS proxy img  │     │                     │
@@ -121,13 +121,13 @@ Quand un fichier est détecté (ex: image, audio), les boutons non pertinents so
 
 ### ⚠️ Prérequis
 
-Avant d'utiliser l'extension, **chaque compte Google** que vous souhaitez utiliser doit avoir été connecté à NotebookLM au moins une fois :
+Avant d'utiliser l'extension, **chaque compte Google** que vous souhaitez utiliser doit avoir été connecté à Gemini Notebook (NotebookLM) au moins une fois :
 
-1. Rendez-vous sur **[notebooklm.google.com](https://notebooklm.google.com/)**
-2. Connectez-vous avec le compte Google souhaité
-3. Attendez que la page d'accueil de NotebookLM se charge (la liste de vos carnets doit s'afficher)
+1. Ouvrez un nouvel onglet et rendez-vous sur [notebooklm.google.com](https://notebooklm.google.com/)
+2. Assurez-vous d'être connecté avec le compte Google souhaité
+3. Attendez que la page d'accueil de Gemini Notebook se charge (la liste de vos carnets doit s'afficher)
 
-> 💡 **Pourquoi ?** L'extension détecte vos comptes en interrogeant les cookies de session NotebookLM. Si vous ne vous êtes jamais connecté à NotebookLM avec un compte, aucun cookie ne sera présent et le compte sera invisible pour l'extension. Se connecter simplement à Google (Gmail, Drive, etc.) ne suffit pas.
+> 💡 **Pourquoi ?** L'extension détecte vos comptes en interrogeant les cookies de session Gemini Notebook (NotebookLM). Si vous ne vous êtes jamais connecté à Gemini Notebook avec un compte, aucun cookie ne sera présent et le compte sera invisible pour l'extension. Se connecter simplement à Google (Gmail, Drive, etc.) ne suffit pas.
 
 > 🔄 **Multi-comptes** : Si vous utilisez plusieurs comptes Google dans le même navigateur, répétez cette opération pour chacun d'eux. L'extension proposera alors un menu déroulant pour choisir le compte cible.
 
@@ -213,12 +213,12 @@ mc4nblm-firefox/
 | Images cross-origin | **Tainted Canvas Protection** : proxy CORS background → data URIs |
 | Pages polluées | **Readability.js** extrait le contenu principal |
 | Tables mal rendues par NBLM | **Mode Markdown** avec tables pipe-delimited |
-| Pages publiques simples | **Mode URL** : NotebookLM scrape la page lui-même |
-| Capture visuelle exacte | **`captureVisibleTab()`** → PNG → upload resumable |
-| Fichiers binaires (PDF, audio, vidéo...) | **Import Direct** : détection MIME + `fetch()` + upload resumable |
-| Texte sélectionné | **Menu contextuel** → `GET_SELECTION_HTML` → `addTextSource` |
-| Google Docs/Sheets/Slides non importables | **Mode Drive** : extraction File ID + RPC `izAoDd` Slot 0 → lien synchronisable |
-| CORS sur API NotebookLM | `fetch()` dans le **background script** (exempt CORS) |
+| Pages publiques simples | **Mode URL** : Gemini Notebook scrape la page lui-même |
+| Pages protégées / intranet | **Mode PDF** (rendu visuel) ou **Mode Markdown** (données structurées) |
+| YouTube (watch / shorts) | **Mode URL** : import natif automatique de la transcription |
+| Fichiers hébergés / docs | **Mode Direct** (PDF, audio, vidéo...) ou **Mode Drive** (Doc/Sheet/Slide) |
+| Morceau de texte spécifique | **Clip de sélection** (clic droit) |
+| CORS sur API Gemini Notebook | `fetch()` dans le **background script** (exempt CORS) |
 | Firefox ne supporte pas `service_worker` | `background.scripts` + `"type": "module"` |
 | Upload PDF ignoré | **Protocole resumable** 3 étapes |
 | Popup ferme le file picker | Fichiers locaux (`file://`) non supportés (restriction navigateur) |

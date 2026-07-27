@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NotebookLM Web Clipper</title>
+  <title>Gemini Notebook Web Clipper</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -42,7 +42,7 @@
     <div class="format-toggle" id="format-toggle" role="toolbar" aria-labelledby="format-label">
       <button class="format-btn active" aria-pressed="true" data-format="pdf" title="Images intégrées, mise en page visuelle" data-i18n="btnPdf" data-i18n-aria-label="btnPdfAriaLabel" data-i18n-title="btnPdfTitle">📄 PDF</button>
       <button class="format-btn" aria-pressed="false" data-format="md" title="Tables parfaites, ultra-léger, natif Gemini" data-i18n="btnMarkdown" data-i18n-aria-label="btnMarkdownAriaLabel" data-i18n-title="btnMarkdownTitle">📝 Markdown</button>
-      <button class="format-btn" aria-pressed="false" data-format="url" title="Import instantané — NotebookLM scrape la page" data-i18n="btnUrl" data-i18n-aria-label="btnUrlAriaLabel" data-i18n-title="btnUrlTitle">🔗 URL</button>
+      <button class="format-btn" aria-pressed="false" data-format="url" title="Import instantané — Gemini Notebook scrape la page" data-i18n="btnUrl" data-i18n-aria-label="btnUrlAriaLabel" data-i18n-title="btnUrlTitle">🔗 URL</button>
       <button class="format-btn" aria-pressed="false" data-format="screenshot" title="Capture le viewport visible en PNG" data-i18n="btnScreenshot" data-i18n-aria-label="btnScreenshotAriaLabel" data-i18n-title="btnScreenshotTitle">📸</button>
       <button class="format-btn" aria-pressed="false" data-format="drive" id="btn-drive-import" style="display: none;" title="Synchronisation native Google Drive" data-i18n="btnDrive" data-i18n-aria-label="btnDriveAriaLabel" data-i18n-title="btnDriveTitle">☁️ Drive</button>
     </div>
@@ -72,7 +72,7 @@
         rows="2"
         maxlength="300"
         placeholder="Note pour l'IA (optionnel) — ex : Comparer avec le rapport 2024"
-        aria-label="Note d'intention pour NotebookLM"
+        aria-label="Note d'intention pour Gemini Notebook"
         data-i18n-placeholder="intentNotePlaceholder"
         data-i18n-aria-label="intentNoteLabelVisible"
       ></textarea>

@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "Magic Clipper cho NotebookLM",
+    "message": "Magic Clipper cho Gemini Notebook",
     "description": "Extension name displayed in Firefox about:addons"
   },
   "extensionDescription": {
-    "message": "Chụp, dọn dẹp và nhập ngay lập tức bất kỳ trang web nào vào Google NotebookLM với độ chính xác kỳ diệu.",
+    "message": "Bắt, làm sạch và nhập liền mạch bất kỳ trang web nào vào Google Gemini Notebook (trước đây là NotebookLM) với độ chính xác kỳ diệu.",
     "description": "Extension description displayed in Firefox about:addons"
   },
   "popupTitleCapture": {
@@ -28,7 +28,7 @@
     "description": "Button label — export as PDF"
   },
   "btnPdfAriaLabel": {
-    "message": "Xuất trang dưới dạng PDF và nhập vào NotebookLM",
+    "message": "Xuất trang dưới dạng PDF và nhập vào Gemini Notebook",
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
@@ -36,7 +36,7 @@
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
-    "message": "Xuất trang dưới dạng Markdown và nhập vào NotebookLM",
+    "message": "Xuất trang dưới dạng Markdown và nhập vào Gemini Notebook",
     "description": "Accessible label for the Markdown button"
   },
   "btnUrl": {
@@ -44,7 +44,7 @@
     "description": "Button label — send URL"
   },
   "btnUrlAriaLabel": {
-    "message": "Gửi URL trực tiếp đến NotebookLM",
+    "message": "Gửi URL trực tiếp đến Gemini Notebook",
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
@@ -52,7 +52,7 @@
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
-    "message": "Chụp ảnh màn hình và nhập vào NotebookLM",
+    "message": "Chụp ảnh màn hình và nhập vào Gemini Notebook",
     "description": "Accessible label for the Screenshot button"
   },
   "btnDirect": {
@@ -60,7 +60,7 @@
     "description": "Button label — direct import"
   },
   "btnDirectAriaLabel": {
-    "message": "Nhập trực tiếp tệp vào NotebookLM",
+    "message": "Nhập trực tiếp tệp vào Gemini Notebook",
     "description": "Accessible label for the Direct Import button"
   },
   "btnDrive": {
@@ -102,11 +102,11 @@
     "description": "Status message during processing"
   },
   "errorApiChanged": {
-    "message": "API NotebookLM đã bị thay đổi. Cần phải cập nhật.",
+    "message": "API Gemini Notebook đã bị thay đổi. Cần phải cập nhật.",
     "description": "User-facing error when API structure is modified"
   },
   "errorAuthExpired": {
-    "message": "Phiên đã hết hạn. Vui lòng đăng nhập lại vào NotebookLM.",
+    "message": "Phiên đã hết hạn. Vui lòng đăng nhập lại vào Gemini Notebook.",
     "description": "User-facing error on 401/403"
   },
   "errorUploadSessionMissing": {
@@ -126,7 +126,7 @@
     "description": "User-facing error for uncategorized errors"
   },
   "menuContextImportSelection": {
-    "message": "Nhập phần đã chọn vào NotebookLM",
+    "message": "Nhập phần đã chọn vào Gemini Notebook",
     "description": "Context menu item to import selected text"
   },
   "popupLabelFormat": {
@@ -206,7 +206,7 @@
     "message": "Đã xảy ra lỗi."
   },
   "apiChanged": {
-    "message": "API NotebookLM đã được Google cập nhật. Cần cập nhật tiện ích mở rộng."
+    "message": "API Gemini Notebook đã được Google cập nhật. Cần cập nhật tiện ích mở rộng."
   },
   "sessionExpired": {
     "message": "Phiên đã hết hạn. Vui lòng đăng nhập lại tại notebooklm.google.com."
@@ -240,13 +240,13 @@
     "message": "✅ Đã nhập lựa chọn!"
   },
   "notifSelectionTitle": {
-    "message": "📎 Clip lựa chọn vào NotebookLM"
+    "message": "📎 Clip lựa chọn vào Gemini Notebook"
   },
   "notifSelectionCaptured": {
     "message": "Đã chụp lựa chọn ✓"
   },
   "notifSelectionMsg": {
-    "message": "Nhấp vào nút NotebookLM Web Clipper để chọn sổ tay."
+    "message": "Nhấp vào nút Gemini Notebook Web Clipper để chọn sổ tay."
   },
   "notifSuccessMsg": {
     "message": "Đã thêm \"{title}\" dưới dạng {format} thành công!"
@@ -282,7 +282,7 @@
     "message": "Phát hiện YouTube → nhập gốc..."
   },
   "statusSendUrl": {
-    "message": "Đang gửi URL đến NotebookLM..."
+    "message": "Đang gửi URL đến Gemini Notebook..."
   },
   "statusImportedYoutube": {
     "message": "✅ Đã nhập video YouTube!"
@@ -340,7 +340,7 @@
     "message": "Bảng hoàn hảo, siêu nhẹ, nguyên bản cho Gemini"
   },
   "btnUrlTitle": {
-    "message": "Nhập ngay lập tức — NotebookLM trích xuất trang"
+    "message": "Nhập ngay lập tức — Gemini Notebook trích xuất trang"
   },
   "btnScreenshotTitle": {
     "message": "Chụp vùng nhìn thấy được dưới dạng PNG"
@@ -359,7 +359,7 @@
     "description": "Fallback title for pages without a title in generated documents"
   },
   "metaCaptureHeader": {
-    "message": "Siêu dữ liệu Thu thập (NotebookLM)",
+    "message": "Siêu dữ liệu Thu thập (Gemini Notebook)",
     "description": "Header label for capture metadata section in generated documents"
   },
   "metaAuthorPrefix": {

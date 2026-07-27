@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "Magic Clipper for NotebookLM",
+    "message": "Magic Clipper for Gemini Notebook",
     "description": "Extension name displayed in Firefox about:addons"
   },
   "extensionDescription": {
-    "message": "Capture, clean, and seamlessly import any web page into Google NotebookLM with magic precision.",
+    "message": "Capture, clean, and seamlessly import any web page into Google Gemini Notebook (formerly NotebookLM) with magic precision.",
     "description": "Extension description displayed in Firefox about:addons"
   },
   "popupTitleCapture": {
@@ -28,7 +28,7 @@
     "description": "Button label — export as PDF"
   },
   "btnPdfAriaLabel": {
-    "message": "Export page as PDF and import into NotebookLM",
+    "message": "Export page as PDF and import into Gemini Notebook",
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
@@ -36,7 +36,7 @@
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
-    "message": "Export page as Markdown and import into NotebookLM",
+    "message": "Export page as Markdown and import into Gemini Notebook",
     "description": "Accessible label for the Markdown button"
   },
   "btnUrl": {
@@ -44,7 +44,7 @@
     "description": "Button label — send URL"
   },
   "btnUrlAriaLabel": {
-    "message": "Send direct URL to NotebookLM",
+    "message": "Send direct URL to Gemini Notebook",
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
@@ -52,7 +52,7 @@
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
-    "message": "Capture screenshot and import into NotebookLM",
+    "message": "Capture screenshot and import into Gemini Notebook",
     "description": "Accessible label for the Screenshot button"
   },
   "btnDirect": {
@@ -60,7 +60,7 @@
     "description": "Button label — direct import"
   },
   "btnDirectAriaLabel": {
-    "message": "Directly import file to NotebookLM",
+    "message": "Directly import file to Gemini Notebook",
     "description": "Accessible label for the Direct Import button"
   },
   "btnDrive": {
@@ -102,11 +102,11 @@
     "description": "Status message during processing"
   },
   "errorApiChanged": {
-    "message": "NotebookLM API has changed. An update is required.",
+    "message": "Gemini Notebook API has changed. An update is required.",
     "description": "User-facing error when API structure is modified"
   },
   "errorAuthExpired": {
-    "message": "Session expired. Please sign in to NotebookLM again.",
+    "message": "Session expired. Please sign in to Gemini Notebook again.",
     "description": "User-facing error on 401/403"
   },
   "errorUploadSessionMissing": {
@@ -126,7 +126,7 @@
     "description": "User-facing error for uncategorized errors"
   },
   "menuContextImportSelection": {
-    "message": "Import selection to NotebookLM",
+    "message": "Import selection to Gemini Notebook",
     "description": "Context menu item to import selected text"
   },
   "popupLabelFormat": {
@@ -143,7 +143,7 @@
   },
   "linkOpenNotebook": {
     "message": "Open notebook →",
-    "description": "Link to open the target notebook in NotebookLM"
+    "description": "Link to open the target notebook in Gemini Notebook"
   },
   "linkDownloadFile": {
     "message": "Download {ext} ↓",
@@ -226,8 +226,8 @@
     "description": "Fallback error message for unspecified errors"
   },
   "apiChanged": {
-    "message": "The NotebookLM API has been updated by Google. An extension update is required.",
-    "description": "Error shown when the NotebookLM API has changed and the extension needs updating"
+    "message": "The Gemini Notebook API has been updated by Google. An extension update is required.",
+    "description": "Error shown when the Gemini Notebook API has changed and the extension needs updating"
   },
   "sessionExpired": {
     "message": "Session expired. Please sign in again at notebooklm.google.com.",
@@ -270,7 +270,7 @@
     "description": "Confirmation message after a selection is successfully imported"
   },
   "notifSelectionTitle": {
-    "message": "📎 Clip selection to NotebookLM",
+    "message": "📎 Clip selection to Gemini Notebook",
     "description": "Title of the browser notification shown after clipping a selection"
   },
   "notifSelectionCaptured": {
@@ -278,7 +278,7 @@
     "description": "Notification body confirming the selection was captured"
   },
   "notifSelectionMsg": {
-    "message": "Click the NotebookLM Web Clipper button to choose a notebook.",
+    "message": "Click the Gemini Notebook Web Clipper button to choose a notebook.",
     "description": "Notification body prompting the user to open the popup after clipping"
   },
   "notifSuccessMsg": {
@@ -326,8 +326,8 @@
     "description": "Status message when a YouTube URL is detected and native import begins"
   },
   "statusSendUrl": {
-    "message": "Sending URL to NotebookLM...",
-    "description": "Status message while the page URL is being sent to NotebookLM"
+    "message": "Sending URL to Gemini Notebook...",
+    "description": "Status message while the page URL is being sent to Gemini Notebook"
   },
   "statusImportedYoutube": {
     "message": "✅ YouTube video imported!",
@@ -343,7 +343,7 @@
   },
   "statusSendMarkdown": {
     "message": "Sending Markdown (text source)...",
-    "description": "Status message while Markdown content is being sent to NotebookLM"
+    "description": "Status message while Markdown content is being sent to Gemini Notebook"
   },
   "statusImportedMarkdown": {
     "message": "✅ Markdown imported!",
@@ -402,7 +402,7 @@
     "description": "Tooltip describing the Markdown export mode"
   },
   "btnUrlTitle": {
-    "message": "Instant import — NotebookLM scrapes the page",
+    "message": "Instant import — Gemini Notebook scrapes the page",
     "description": "Tooltip describing the URL import mode"
   },
   "btnScreenshotTitle": {
@@ -426,7 +426,7 @@
     "description": "Fallback title for pages without a title in generated documents"
   },
   "metaCaptureHeader": {
-    "message": "Capture Metadata (NotebookLM)",
+    "message": "Capture Metadata (Gemini Notebook)",
     "description": "Header label for capture metadata section in generated documents"
   },
   "metaAuthorPrefix": {

@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "Magic Clipper for NotebookLM",
+    "message": "Magic Clipper for Gemini Notebook",
     "description": "Extension name displayed in Firefox about:addons"
   },
   "extensionDescription": {
-    "message": "Erfassen, bereinigen und importieren Sie jede Webseite nahtlos in Google NotebookLM mit magischer Präzision.",
+    "message": "Erfassen, bereinigen und importieren Sie jede Webseite nahtlos in Google Gemini Notebook (ehemals NotebookLM) mit magischer Präzision.",
     "description": "Extension description displayed in Firefox about:addons"
   },
   "popupTitleCapture": {
@@ -28,7 +28,7 @@
     "description": "Button label — export as PDF"
   },
   "btnPdfAriaLabel": {
-    "message": "Seite als PDF exportieren und in NotebookLM importieren",
+    "message": "Seite als PDF exportieren und in Gemini Notebook importieren",
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
@@ -36,7 +36,7 @@
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
-    "message": "Seite als Markdown exportieren und in NotebookLM importieren",
+    "message": "Seite als Markdown exportieren und in Gemini Notebook importieren",
     "description": "Accessible label for the Markdown button"
   },
   "btnUrl": {
@@ -44,7 +44,7 @@
     "description": "Button label — send URL"
   },
   "btnUrlAriaLabel": {
-    "message": "Direkte URL an NotebookLM senden",
+    "message": "Direkte URL an Gemini Notebook senden",
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
@@ -52,7 +52,7 @@
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
-    "message": "Screenshot erfassen und in NotebookLM importieren",
+    "message": "Screenshot erfassen und in Gemini Notebook importieren",
     "description": "Accessible label for the Screenshot button"
   },
   "btnDirect": {
@@ -60,7 +60,7 @@
     "description": "Button label — direct import"
   },
   "btnDirectAriaLabel": {
-    "message": "Datei direkt in NotebookLM importieren",
+    "message": "Datei direkt in Gemini Notebook importieren",
     "description": "Accessible label for the Direct Import button"
   },
   "btnDrive": {
@@ -102,11 +102,11 @@
     "description": "Status message during processing"
   },
   "errorApiChanged": {
-    "message": "Die NotebookLM-API wurde geändert. Ein Update ist erforderlich.",
+    "message": "Die Gemini Notebook-API wurde geändert. Ein Update ist erforderlich.",
     "description": "User-facing error when API structure is modified"
   },
   "errorAuthExpired": {
-    "message": "Sitzung abgelaufen. Bitte melden Sie sich erneut bei NotebookLM an.",
+    "message": "Sitzung abgelaufen. Bitte melden Sie sich erneut bei Gemini Notebook an.",
     "description": "User-facing error on 401/403"
   },
   "errorUploadSessionMissing": {
@@ -126,7 +126,7 @@
     "description": "User-facing error for uncategorized errors"
   },
   "menuContextImportSelection": {
-    "message": "Auswahl in NotebookLM importieren",
+    "message": "Auswahl in Gemini Notebook importieren",
     "description": "Context menu item to import selected text"
   },
   "popupLabelFormat": {
@@ -202,7 +202,7 @@
     "message": "Ein Fehler ist aufgetreten."
   },
   "apiChanged": {
-    "message": "Die NotebookLM-API wurde von Google aktualisiert. Ein Erweiterungsupdate ist erforderlich."
+    "message": "Die Gemini Notebook-API wurde von Google aktualisiert. Ein Erweiterungsupdate ist erforderlich."
   },
   "sessionExpired": {
     "message": "Sitzung abgelaufen. Bitte melden Sie sich erneut unter notebooklm.google.com an."
@@ -236,13 +236,13 @@
     "message": "✅ Auswahl importiert!"
   },
   "notifSelectionTitle": {
-    "message": "📎 Auswahl in NotebookLM clippen"
+    "message": "📎 Auswahl in Gemini Notebook clippen"
   },
   "notifSelectionCaptured": {
     "message": "Auswahl erfasst ✓"
   },
   "notifSelectionMsg": {
-    "message": "Klicken Sie auf die Schaltfläche NotebookLM Web Clipper, um ein Notizbuch auszuwählen."
+    "message": "Klicken Sie auf die Schaltfläche Gemini Notebook Web Clipper, um ein Notizbuch auszuwählen."
   },
   "notifSuccessMsg": {
     "message": "\"{title}\" erfolgreich als {format} hinzugefügt!"
@@ -278,7 +278,7 @@
     "message": "YouTube erkannt → nativer Import..."
   },
   "statusSendUrl": {
-    "message": "URL wird an NotebookLM gesendet..."
+    "message": "URL wird an Gemini Notebook gesendet..."
   },
   "statusImportedYoutube": {
     "message": "✅ YouTube-Video importiert!"
@@ -340,7 +340,7 @@
     "message": "Perfekte Tabellen, ultraleicht, nativ für Gemini"
   },
   "btnUrlTitle": {
-    "message": "Sofortiger Import — NotebookLM liest die Seite aus"
+    "message": "Sofortiger Import — Gemini Notebook liest die Seite aus"
   },
   "btnScreenshotTitle": {
     "message": "Sichtbaren Bereich als PNG erfassen"
@@ -359,7 +359,7 @@
     "description": "Fallback title for pages without a title in generated documents"
   },
   "metaCaptureHeader": {
-    "message": "Erfassungsmetadaten (NotebookLM)",
+    "message": "Erfassungsmetadaten (Gemini Notebook)",
     "description": "Header label for capture metadata section in generated documents"
   },
   "metaAuthorPrefix": {

@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "Magic Clipper ba NotebookLM",
+    "message": "Magic Clipper pou Gemini Notebook",
     "description": "Extension name displayed in Firefox about:addons"
   },
   "extensionDescription": {
-    "message": "Kenbé, pwopté, é chajé nenpòt ki paj wèb adan Google NotebookLM konsidiré sé kenbwa ou ka fè.",
+    "message": "Pran, nettoyé é enporté sé paj web la adan Google Gemini Notebook èvèk précision.",
     "description": "Extension description displayed in Firefox about:addons"
   },
   "popupTitleCapture": {
@@ -28,7 +28,7 @@
     "description": "Button label — export as PDF"
   },
   "btnPdfAriaLabel": {
-    "message": "Woté paj-la an PDF é chajé-y adan NotebookLM",
+    "message": "Woté paj-la an PDF é chajé-y adan Gemini Notebook",
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
@@ -36,7 +36,7 @@
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
-    "message": "Woté paj-la an Markdown é chajé-y adan NotebookLM",
+    "message": "Woté paj-la an Markdown é chajé-y adan Gemini Notebook",
     "description": "Accessible label for the Markdown button"
   },
   "btnUrl": {
@@ -44,7 +44,7 @@
     "description": "Button label — send URL"
   },
   "btnUrlAriaLabel": {
-    "message": "Chajé URL-la dirèktèman adan NotebookLM",
+    "message": "Chajé URL-la dirèktèman adan Gemini Notebook",
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
@@ -52,7 +52,7 @@
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
-    "message": "Fè on screenshot é chajé-y adan NotebookLM",
+    "message": "Fè on screenshot é chajé-y adan Gemini Notebook",
     "description": "Accessible label for the Screenshot button"
   },
   "btnDirect": {
@@ -60,7 +60,7 @@
     "description": "Button label — direct import"
   },
   "btnDirectAriaLabel": {
-    "message": "Chajé fichyé-la dirèktèman adan NotebookLM",
+    "message": "Chajé fichyé-la dirèktèman adan Gemini Notebook",
     "description": "Accessible label for the Direct Import button"
   },
   "btnDrive": {
@@ -102,11 +102,11 @@
     "description": "Status message during processing"
   },
   "errorApiChanged": {
-    "message": "API NotebookLM-la chanjé. Fò ou mété-y a jou.",
+    "message": "API Gemini Notebook-la chanjé. Fò ou mété-y a jou.",
     "description": "User-facing error when API structure is modified"
   },
   "errorAuthExpired": {
-    "message": "Sésyon a'w bout. Souplé, wokonèkté-w ankò anlè NotebookLM.",
+    "message": "Sésyon a'w bout. Souplé, wokonèkté-w ankò anlè Gemini Notebook.",
     "description": "User-facing error on 401/403"
   },
   "errorUploadSessionMissing": {
@@ -126,7 +126,7 @@
     "description": "User-facing error for uncategorized errors"
   },
   "menuContextImportSelection": {
-    "message": "Chajé mòso-la sa adan NotebookLM",
+    "message": "Chajé mòso-la sa adan Gemini Notebook",
     "description": "Context menu item to import selected text"
   },
   "popupLabelFormat": {
@@ -206,7 +206,7 @@
     "message": "On érè rivé."
   },
   "apiChanged": {
-    "message": "Google chanjé API NotebookLM-la. Fò nou aktyalizé èkstansyon-la."
+    "message": "Google chanjé API Gemini Notebook-la. Fò nou aktyalizé èkstansyon-la."
   },
   "sessionExpired": {
     "message": "Sésyon-la fèmé. Viré lyanné anlè notebooklm.google.com."
@@ -240,13 +240,13 @@
     "message": "✅ Pyès-la chajé !"
   },
   "notifSelectionTitle": {
-    "message": "📎 Voyé tèks la asi NotebookLM"
+    "message": "📎 Voyé tèks la asi Gemini Notebook"
   },
   "notifSelectionCaptured": {
     "message": "Tèks-la chajé ! ✓"
   },
   "notifSelectionMsg": {
-    "message": "Pijé bouton NotebookLM Web Clipper-la pou chwazi on kayé."
+    "message": "Pijé bouton Gemini Notebook Web Clipper-la pou chwazi on kayé."
   },
   "notifSuccessMsg": {
     "message": "\"{title}\" byen chajé an {format} !"
@@ -282,7 +282,7 @@
     "message": "YouTube détékté → chajman natif..."
   },
   "statusSendUrl": {
-    "message": "Nou ka voyé URL-la ba NotebookLM..."
+    "message": "Nou ka voyé URL-la ba Gemini Notebook..."
   },
   "statusImportedYoutube": {
     "message": "✅ Vidéo YouTube-la fin chajé !"
@@ -340,7 +340,7 @@
     "message": "Tab parfè, byen léjé, natif-natal pou Gemini"
   },
   "btnUrlTitle": {
-    "message": "Enpòté la menm — NotebookLM ka pwan paj la"
+    "message": "Enpòté la menm — Gemini Notebook ka pwan paj la"
   },
   "btnScreenshotTitle": {
     "message": "Pwan on foto sa ou ka vwè (PNG)"
@@ -359,7 +359,7 @@
     "description": "Fallback title for pages without a title in generated documents"
   },
   "metaCaptureHeader": {
-    "message": "Métadonnées Kaptir (NotebookLM)",
+    "message": "Métadonnées Kaptir (Gemini Notebook)",
     "description": "Header label for capture metadata section in generated documents"
   },
   "metaAuthorPrefix": {

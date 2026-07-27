@@ -1,4 +1,4 @@
-# Privacy Policy — Magic Clipper for NotebookLM
+# Privacy Policy — Magic Clipper for Gemini Notebook
 
 **Last updated:** July 27, 2026
 
@@ -6,14 +6,14 @@
 
 ## English
 
-**Magic Clipper for NotebookLM** is a Firefox browser extension developed by **MTF Karukera**.
+**Magic Clipper for Gemini Notebook** (formerly NotebookLM) is a Firefox browser extension developed by **MTF Karukera**.
 
 ### Data Collection
 This extension **does not collect, store, transmit, or share any personal data**. It operates **100% locally** within your browser.
 
 ### How It Works
 - The extension reads the content of the active web page **only when you explicitly trigger a capture** (via the popup button or context menu).
-- Captured content (PDF, Markdown, screenshot, or URL) is sent **directly to Google NotebookLM** using your existing Google session cookies, without passing through any third-party server.
+- Captured content (PDF, Markdown, screenshot, or URL) is sent **directly to Google Gemini Notebook** (notebooklm.google.com) using your existing Google session cookies, without passing through any third-party server.
 - No data is sent to the developer or any analytics service.
 
 ### Permissions Justification
@@ -21,7 +21,7 @@ This extension **does not collect, store, transmit, or share any personal data**
 | Permission | Purpose |
 |---|---|
 | `storage` | Store user preferences (active account index, locale selection) locally in the browser profile. |
-| `cookies` | Read existing Google session cookies to authenticate requests to NotebookLM (no cookies are created or modified). |
+| `cookies` | Read existing Google session cookies to authenticate requests to Gemini Notebook (no cookies are created or modified). |
 | `activeTab` | Access the content of the currently active tab when the user explicitly triggers a capture. |
 | `notifications` | Display OS notifications when an import completes while the popup is closed. |
 | `downloads` | Allow the user to download captured content (PDF/Markdown) to their local filesystem. |
@@ -34,20 +34,20 @@ This extension **does not collect, store, transmit, or share any personal data**
 - **Readability.js** (Apache 2.0 License) — Mozilla's article content extractor. No network calls.
 
 ### Contact
-For questions about this privacy policy, please open an issue on the [GitHub repository](https://github.com/Aumusic/mc4nblm-firefox).
+For questions about this privacy policy, please open an issue on the [GitHub repository](https://github.com/mtfkarukera/mc4nblm-firefox).
 
 ---
 
 ## Français
 
-**Magic Clipper for NotebookLM** est une extension Firefox développée par **MTF Karukera**.
+**Magic Clipper for Gemini Notebook** (anciennement NotebookLM) est une extension Firefox développée par **MTF Karukera**.
 
 ### Collecte de données
 Cette extension **ne collecte, ne stocke, ne transmet et ne partage aucune donnée personnelle**. Elle fonctionne **100% localement** dans votre navigateur.
 
 ### Fonctionnement
 - L'extension lit le contenu de la page web active **uniquement lorsque vous déclenchez explicitement une capture** (via le bouton popup ou le menu contextuel).
-- Le contenu capturé (PDF, Markdown, capture d'écran ou URL) est envoyé **directement à Google NotebookLM** en utilisant vos cookies de session Google existants, sans passer par un serveur tiers.
+- Le contenu capturé (PDF, Markdown, capture d'écran ou URL) est envoyé **directement à Google Gemini Notebook** (notebooklm.google.com) en utilisant vos cookies de session Google existants, sans passer par un serveur tiers.
 - Aucune donnée n'est envoyée au développeur ni à un service d'analyse.
 
 ### Justification des permissions
@@ -55,7 +55,7 @@ Cette extension **ne collecte, ne stocke, ne transmet et ne partage aucune donn�
 | Permission | Utilisation |
 |---|---|
 | `storage` | Stocker les préférences utilisateur (index de compte actif, sélection de langue) localement dans le profil du navigateur. |
-| `cookies` | Lire les cookies de session Google existants pour authentifier les requêtes vers NotebookLM (aucun cookie n'est créé ni modifié). |
+| `cookies` | Lire les cookies de session Google existants pour authentifier les requêtes vers Gemini Notebook (aucun cookie n'est créé ni modifié). |
 | `activeTab` | Accéder au contenu de l'onglet actif lorsque l'utilisateur déclenche explicitement une capture. |
 | `notifications` | Afficher des notifications système lorsqu'un import est terminé alors que la popup est fermée. |
 | `downloads` | Permettre à l'utilisateur de télécharger le contenu capturé (PDF/Markdown) sur son système local. |
@@ -68,7 +68,7 @@ Cette extension **ne collecte, ne stocke, ne transmet et ne partage aucune donn�
 - **Readability.js** (Licence Apache 2.0) — Extracteur de contenu article de Mozilla. Aucun appel réseau.
 
 ### Contact
-Pour toute question concernant cette politique de confidentialité, veuillez ouvrir un ticket sur le [dépôt GitHub](https://github.com/AuMusic/mc4nblm-firefox).
+Pour toute question concernant cette politique de confidentialité, veuillez ouvrir un ticket sur le [dépôt GitHub](https://github.com/mtfkarukera/mc4nblm-firefox).
 
 ---
 
