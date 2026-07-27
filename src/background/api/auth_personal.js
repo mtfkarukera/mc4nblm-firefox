@@ -38,10 +38,12 @@ export async function getPersonalAuthCookies() {
  * @throws  {Error}                    - Si la session est expirée (401/403) ou si le token est absent de la page.
  */
 export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
-  // Vérification TTL : si le token a moins de 5 minutes, le réutiliser
-  const stored = await browser.storage.local.get(['nblm_csrf', 'nblm_csrf_ts']);
-  if (stored.nblm_csrf && stored.nblm_csrf_ts && (Date.now() - stored.nblm_csrf_ts < 5 * 60 * 1000)) {
-    return stored.nblm_csrf;
+  // ROB-2 : cache CSRF indexé par compte pour éviter les collisions multi-comptes
+  const csrfKey = `nblm_csrf_${authuserIndex}`;
+  const csrfTsKey = `nblm_csrf_ts_${authuserIndex}`;
+  const stored = await browser.storage.local.get([csrfKey, csrfTsKey]);
+  if (stored[csrfKey] && stored[csrfTsKey] && (Date.now() - stored[csrfTsKey] < 5 * 60 * 1000)) {
+    return stored[csrfKey];
   }
 
   // Le token SNlM0e est indispensable pour la signature des charges utiles batchexecute
@@ -56,7 +58,7 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      await browser.storage.local.remove(['nblm_personal_cookie', 'nblm_csrf', 'nblm_csrf_ts']);
+      await browser.storage.local.remove(['nblm_personal_cookie', csrfKey, csrfTsKey]);
       throw new Error("Session NotebookLM expirée (HTTP 401/403).");
     }
     throw new Error(`HTTP Error ${response.status}`);
@@ -68,7 +70,7 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
   const match = html.match(/"SNlM0e":"([^"]+)"/);
   if (match && match[1]) {
     const csrfToken = match[1];
-    await browser.storage.local.set({ nblm_csrf: csrfToken, nblm_csrf_ts: Date.now() });
+    await browser.storage.local.set({ [csrfKey]: csrfToken, [csrfTsKey]: Date.now() });
     return csrfToken;
   } else {
     throw new Error("Token CSRF SNlM0e introuvable sur la page.");

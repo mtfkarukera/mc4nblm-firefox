@@ -142,7 +142,8 @@ export async function detectFileType(url) {
     let detectedMime = null;
     if (!isLocal && url.startsWith('http')) {
         try {
-            const headResp = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+            // ROB-5 : timeout de 5s pour éviter le blocage de l'UI si le serveur est lent
+            const headResp = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(5000) });
             const contentType = headResp.headers.get('content-type') || '';
             detectedMime = contentType.split(';')[0].trim().toLowerCase();
         } catch (e) {

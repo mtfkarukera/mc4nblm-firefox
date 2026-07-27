@@ -43,13 +43,13 @@
   :root {
     --bg-color: #202124;
     --panel-bg: rgba(41, 42, 45, 0.85);
-    --border-color: rgba(255, 255, 255, 0.1);
+    --border-color: rgba(255, 255, 255, 0.15); /* D4 : bordures plus visibles en dark */
     --primary-color: #8ab4f8;
     --primary-hover: #aecbfa;
     --primary-light: rgba(138, 180, 248, 0.15);
     --primary-hover-bg: rgba(138, 180, 248, 0.08);
     --text-main: #e8eaed;
-    --text-muted: #9aa0a6;
+    --text-muted: #bdc1c6; /* D3 : meilleur contraste en dark pour les labels/placeholders */
     
     --status-success: #81c995;
     --success-bg: rgba(129, 201, 149, 0.15);
@@ -96,7 +96,7 @@ body {
 /* Glassmorphism panel base */
 header, section, footer {
   background: var(--panel-bg);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px) saturate(180%); /* D1 : glassmorphism renforcé */
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 8px 10px;
@@ -221,7 +221,7 @@ input[type="text"]:focus-visible {
   font-size: 13px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* D2 : courbe Material */
 }
 .notebook-item:hover, .notebook-item.selected {
   background-color: var(--primary-light);
@@ -250,7 +250,7 @@ input[type="text"]:focus-visible {
   font-weight: 500;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* D2 */
   text-align: center;
 }
 .format-btn:not(:last-child) {
@@ -365,7 +365,7 @@ input[type="text"]:focus-visible {
   line-height: 1.4;
   resize: none;
   outline: 2px solid transparent;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* D2 */
 }
 
 .intent-input::placeholder {
@@ -425,6 +425,7 @@ input[type="text"]:focus-visible {
 }
 .primary-btn:not(:disabled):hover {
   background-color: var(--primary-hover);
+  box-shadow: 0 2px 4px var(--shadow-color); /* D5 : profondeur au survol */
 }
 #btn-create-notebook {
   padding: 0 16px;
@@ -510,10 +511,12 @@ footer { margin-bottom: 0; padding: 8px 12px; text-align: center; }
   #account-switcher {
     font-size: 13px;
     padding: 6px 8px;
+    min-height: 44px; /* A11Y-6 : touch target minimum */
   }
   .locale-selector {
     padding: 6px 8px;
     font-size: 13px;
+    min-height: 44px; /* A11Y-6 : touch target minimum */
   }
   .selection-clear {
     min-width: 44px;

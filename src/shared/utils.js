@@ -134,17 +134,15 @@ export async function getActiveAuthuser() {
 
 /**
  * Convertit une chaîne Base64 brute (sans préfixe data URI) en Uint8Array.
- * Remplace le pattern atob/charCodeAt répété 3× dans le projet.
+ * Utilise l'API Fetch native (asynchrone, optimisée en mémoire) pour éviter
+ * le pic d'allocation de atob() sur les fichiers volumineux (jusqu'à 200 Mo).
+ *
  * @param  {string} base64 - Chaîne Base64 pure.
- * @returns {Uint8Array}
+ * @returns {Promise<Uint8Array>}
  */
-export function base64ToUint8Array(base64) {
-  const binaryStr = atob(base64);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) {
-    bytes[i] = binaryStr.charCodeAt(i);
-  }
-  return bytes;
+export async function base64ToUint8Array(base64) {
+  const res = await fetch('data:application/octet-stream;base64,' + base64);
+  return new Uint8Array(await res.arrayBuffer());
 }
 
 /**

@@ -228,6 +228,28 @@ mc4nblm-firefox/
 
 ## 📋 Changelog récent
 
+### v6.2.0 — Audit Sécurité, Robustesse & Design — Juillet 2026
+
+#### 🔐 Sécurité
+- Proxy d'images CORS : `credentials: 'omit'` pour prévenir les risques SSRF (SEC-1)
+
+#### 🛡️ Robustesse
+- `base64ToUint8Array` : conversion asynchrone via Fetch API, élimine le risque OOM sur fichiers volumineux (ROB-1)
+- Cache CSRF indexé par `authuserIndex` pour éviter les collisions multi-comptes (ROB-2)
+- Suppression du `setTimeout(30s)` sur `DOWNLOAD_CAPTURE` — nettoyage via `onChanged` uniquement (ROB-3)
+- Timeout `AbortSignal.timeout(5000)` sur la requête HEAD de détection MIME (ROB-5)
+
+#### ♿ Accessibilité
+- `aria-busy="true"` sur le skeleton loader pendant le chargement des carnets (A11Y-2)
+- Touch targets `min-height: 44px` pour `#account-switcher` et `.locale-selector` en mode tactile (A11Y-6)
+
+#### 🎨 Design & UX
+- Glassmorphism renforcé : `blur(12px) saturate(180%)` (D1)
+- Transitions Material Design : `cubic-bezier(0.4, 0, 0.2, 1)` sur tous les éléments interactifs (D2)
+- Contraste amélioré en dark mode : `--text-muted: #bdc1c6` (D3)
+- Bordures dark mode plus visibles : `--border-color: rgba(255,255,255,0.15)` (D4)
+- Ombre portée au survol du bouton primaire (D5)
+
 ### v6.1.0 — Accessibilité, Stabilité, Architecture & Polish — Juin 2026
 
 #### ♿ Accessibilité (WCAG 2.1 AA)

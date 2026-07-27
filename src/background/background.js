@@ -227,7 +227,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return;
             }
             try {
-                const resp = await fetch(url, { credentials: 'include', signal: AbortSignal.timeout(10_000) });
+                // Sécurité (SEC-1) : credentials omit pour ne pas envoyer les cookies vers des serveurs tiers
+                const resp = await fetch(url, { credentials: 'omit', signal: AbortSignal.timeout(10_000) });
                 if (!resp.ok) { sendResponse({ error: `HTTP ${resp.status}` }); return; }
                 const blob = await resp.blob();
                 const reader = new FileReader();
@@ -259,7 +260,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     ext = '.md';
                 } else {
                     const base64 = capture.data.split(',')[1];
-                    const byteArr = base64ToUint8Array(base64);
+                    const byteArr = await base64ToUint8Array(base64);
                     const blob = new Blob([byteArr], { type: 'application/pdf' });
                     blobUrl = URL.createObjectURL(blob);
                     ext = '.pdf';
@@ -283,11 +284,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
                 };
                 browser.downloads.onChanged.addListener(onChanged);
-                // Fallback : révoquer après 30s si l'événement n'est jamais reçu
-                setTimeout(() => {
-                    URL.revokeObjectURL(blobUrl);
-                    browser.downloads.onChanged.removeListener(onChanged);
-                }, 30_000);
+                // ROB-3 : pas de setTimeout — le listener onChanged gère le nettoyage
 
                 sendResponse({ ok: true });
             } catch (err) {
@@ -552,7 +549,7 @@ async function handleScreenshot(ctx) {
 
     const dataUrl = await browser.tabs.captureVisibleTab(null, { format: 'png' });
     const base64 = dataUrl.split(',')[1];
-    const bytes = base64ToUint8Array(base64);
+    const bytes = await base64ToUint8Array(base64);
     const pngBlob = new Blob([bytes], { type: 'image/png' });
     const screenshotFilename = `${cleanTitle}.png`;
 

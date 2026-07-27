@@ -83,6 +83,8 @@ function setPlaceholder(container, text, className) {
 
 /** Affiche un skeleton loader de 3 barres pulsantes dans le container. */
 function showSkeleton(container) {
+  // A11Y-2 : signaler le chargement aux technologies d'assistance
+  container.setAttribute('aria-busy', 'true');
   container.replaceChildren();
   for (let i = 0; i < 3; i++) {
     const bar = document.createElement('div');
@@ -294,6 +296,8 @@ function loadNotebooks() {
 
 /** Construit la liste visuelle des carnets dans le DOM à partir d'un tableau filtré. */
 function renderNotebooks(list) {
+    // A11Y-2 : fin du chargement pour les technologies d'assistance
+    uiNotebookList.setAttribute('aria-busy', 'false');
     uiNotebookList.replaceChildren();
     if(list.length === 0) {
         setPlaceholder(uiNotebookList, t('notebookNotFound'));
