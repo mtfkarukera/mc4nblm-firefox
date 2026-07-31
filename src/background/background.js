@@ -141,7 +141,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (sender.id && sender.id !== browser.runtime.id) return false;
 
     if (message.action === "GET_AUTH_STATUS") {
-        browser.cookies.getAll({ url: "https://notebooklm.google.com/" }).then(cookies => {
+        browser.cookies.getAll({ url: "https://notebook.google.com/" }).then(cookies => {
             if (cookies && cookies.length > 0) {
                 sendResponse({ status: "CONNECTE", type: "PERSONAL" });
             } else {

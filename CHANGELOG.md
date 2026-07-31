@@ -4,6 +4,14 @@ Toutes les modifications majeures apportées au projet **Magic Clipper for Gemin
 
 ---
 
+## [v6.2.3] — 2026-07-31
+
+### 🔴 Correctif Critique — Migration vers notebook.google.com
+- **Migration Domaine Google** : Alignement de l'extension Web Clipper Firefox sur le nouveau domaine officiel de Google Gemini Notebook (`notebook.google.com`).
+- **RPC & Authentification** : Mise à jour des endpoints RPC `batchexecute`, de l'upload resumable, de la lecture des cookies et du jeton CSRF vers `notebook.google.com` (avec fallback résilient sur `notebooklm.google.com`).
+
+---
+
 ## [v6.2.2] — 2026-07-27
 
 ### 🐛 Correctifs

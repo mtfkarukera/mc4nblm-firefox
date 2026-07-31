@@ -388,7 +388,7 @@ async function createNewNotebook() {
       uiSearchInput.value = '';
       renderNotebooks(allNotebooksCache);
       
-      const notebookUrl = `https://notebooklm.google.com/notebook/${response.notebookId}`;
+      const notebookUrl = `https://notebook.google.com/notebook/${response.notebookId}`;
       updateStatus(t('notebookCreated').replace('{title}', title), "success", notebookUrl);
     } else {
       const msg = response?.i18nKey ? t(response.i18nKey) : t('errCreateNotebook');

@@ -1,5 +1,8 @@
 # 📎 Magic Clipper for Gemini Notebook — Extension Firefox MV3
 
+![Release](https://img.shields.io/badge/release-v6.2.3-blue.svg)
+![License](https://img.shields.io/badge/license-MPL--2.0-green.svg)
+
 Capturez le contenu de n'importe quelle page web et importez-le directement dans un carnet **Google Gemini Notebook** (anciennement NotebookLM) — en **PDF**, **Markdown**, **URL directe**, **Screenshot**, **Import Direct**, **Sélection de texte** ou **☁️ Google Drive natif**. Compatible **Firefox Desktop et Android**. Optimisé pour l'analyse par Gemini (grounding IA intégré).
 
 ---

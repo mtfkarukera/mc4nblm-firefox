@@ -274,7 +274,7 @@ export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0) {
     const rpcRequest = encodeRpcRequest(rpcId, jsonArgs);
     const body = buildRequestBody(rpcRequest, csrfToken);
     const queryString = buildQueryParams(rpcId);
-    const endpoint = `https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuserIndex}`;
+    const endpoint = `https://notebook.google.com/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuserIndex}`;
 
     const response = await fetch(endpoint, {
         method: 'POST',
@@ -552,10 +552,10 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
 
     // ╔════════════════════════════════════════════════════════╗
     // ║ ÉTAPE 2 : Démarrer le upload resumable                ║
-    // ║ POST https://notebooklm.google.com/upload/_/          ║
+    // ║ POST https://notebook.google.com/upload/_/           ║
     // ║ Headers: x-goog-upload-command: start                 ║
     // ╚════════════════════════════════════════════════════════╝
-    const uploadStartUrl = `https://notebooklm.google.com/upload/_/?authuser=${authuserIndex}`;
+    const uploadStartUrl = `https://notebook.google.com/upload/_/?authuser=${authuserIndex}`;
 
     const startBody = JSON.stringify({
         "PROJECT_ID": notebookId,
@@ -569,8 +569,8 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
             'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
             'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebooklm.google.com',
-            'Referer': 'https://notebooklm.google.com/',
+            'Origin': 'https://notebook.google.com',
+            'Referer': 'https://notebook.google.com/',
             'x-goog-authuser': String(authuserIndex),
             'x-goog-upload-command': 'start',
             'x-goog-upload-header-content-length': String(blob.size),
@@ -599,8 +599,8 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
             'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
             'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebooklm.google.com',
-            'Referer': 'https://notebooklm.google.com/',
+            'Origin': 'https://notebook.google.com',
+            'Referer': 'https://notebook.google.com/',
             'x-goog-authuser': String(authuserIndex),
             'x-goog-upload-command': 'upload, finalize',
             'x-goog-upload-offset': '0'

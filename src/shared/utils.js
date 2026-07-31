@@ -152,7 +152,7 @@ export async function base64ToUint8Array(base64) {
  * @returns {string}
  */
 export function buildNotebookUrl(notebookId) {
-  return `https://notebooklm.google.com/notebook/${notebookId}`;
+  return `https://notebook.google.com/notebook/${notebookId}`;
 }
 
 // Export pour le contexte du Content Script (accès via window.ClipperUtils)

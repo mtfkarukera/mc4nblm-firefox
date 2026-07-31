@@ -12,7 +12,10 @@
  */
 export async function getPersonalAuthCookies() {
   // L'URL exacte sur laquelle interroger le cookie jar de Firefox
-  const cookies = await browser.cookies.getAll({ url: "https://notebooklm.google.com/" });
+  let cookies = await browser.cookies.getAll({ url: "https://notebook.google.com/" });
+  if (!cookies || cookies.length === 0) {
+    cookies = await browser.cookies.getAll({ url: "https://notebooklm.google.com/" });
+  }
 
   if (cookies.length === 0) {
     throw new Error(`Aucun cookie trouvé. Veuillez vous connecter à NotebookLM dans un nouvel onglet.`);
@@ -47,7 +50,7 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
   }
 
   // Le token SNlM0e est indispensable pour la signature des charges utiles batchexecute
-  const response = await fetch(`https://notebooklm.google.com/?authuser=${authuserIndex}`, {
+  const response = await fetch(`https://notebook.google.com/?authuser=${authuserIndex}`, {
     method: 'GET',
     headers: {
        'Cookie': cookieString,
@@ -97,7 +100,7 @@ export async function detectGoogleAccounts(cookieString) {
 
   for (let i = 0; i < MAX_ACCOUNTS; i++) {
     try {
-      const response = await fetch(`https://notebooklm.google.com/?authuser=${i}`, {
+      const response = await fetch(`https://notebook.google.com/?authuser=${i}`, {
         method: 'GET',
         headers: { 'Cookie': cookieString },
         redirect: 'manual'  // Ne pas suivre les redirections automatiquement
