@@ -44,6 +44,17 @@ Avant d'utiliser l'extension, **chaque compte Google** que vous souhaitez utilis
 - **Fichier XPI signé** : Téléchargez la dernière version compilée dans le dossier `dist/` ou sur les [Releases GitHub](https://github.com/mtfkarukera/mc4nblm-firefox/releases), puis glissez le fichier `.xpi` dans `about:addons`.
 - **Développement local** : Ouvrez `about:debugging` ➔ **Ce Firefox** ➔ **Charger un module complémentaire temporaire...** ➔ choisissez `manifest.json`.
 
+### 🛡️ Restriction Serveur Google : Message « Ce contenu d'image n'est pas accepté »
+
+Lors de l'utilisation du mode **📸 Screenshot** ou de l'**⚡ Import Direct d'image** (`PNG`, `JPEG`), il peut arriver qu'une source apparaisse en rouge dans votre carnet Gemini Notebook avec l'infobulle :
+> **« Ce contenu d'image n'est pas accepté. »** *(« This image content is not supported / accepted »)*
+
+**Ce blocage ne provient pas d'un bug de Magic Clipper**, mais du filtre de modération visuelle automatisé (*Vision Safety Filter*) des serveurs de Google Gemini Notebook :
+- Google applique une politique de filtrage très stricte sur les fichiers **images autonomes** (`image/png`, `image/jpeg`) et rejette fréquemment les captures d'écran contenant des **visages humains** (photos, avatars ou personnages dessinés par IA) ainsi que certains aperçus d'interfaces de messagerie (courriels avec champs `De` / `À`).
+- **Solutions de contournement immédiates :**
+  1. **Utiliser le mode 📄 PDF (Recommandé)** : Le parseur PDF de Gemini Notebook n'applique pas cette restriction aux illustrations intégrées dans un document. Vos images et schémas y seront importés sans blocage.
+  2. **Faire défiler la page (Scroll)** : Si vous souhaitez uniquement une capture d'écran PNG, faites défiler la page pour que le portrait ou l'illustration concernée ne soit plus visible à l'écran avant de lancer la capture.
+
 ---
 
 ## 📜 Historique des Versions (Changelog)
