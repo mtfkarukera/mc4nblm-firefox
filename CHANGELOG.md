@@ -4,6 +4,17 @@ Toutes les modifications majeures apportées au projet **Magic Clipper for Gemin
 
 ---
 
+## [v6.2.5] — 2026-10-24
+
+### 🐛 Correctif Critique — Protocole Scotty & Ingestion Multimodale
+- **Scotty MIME Header (Upload Initiation)** : Ajout systématique du header `'x-goog-upload-header-content-type': contentType` dans la requête d'initialisation de l'upload resumable (`x-goog-upload-command: start`). Corrige l'erreur d'ingestion asynchrone Google (`SourceStatus.ERROR = 3` / bandeau rouge avec `(i)`) sur les captures d'écran et les imports de fichiers binaires non-PDF.
+- **Assainissement Content-Type (Upload Finalize)** : Suppression du header forcé `Content-Type: application/x-www-form-urlencoded;charset=utf-8` lors de l'upload binaire effectif (`upload, finalize`), remplacé par le MIME type réel du blob (`contentType`).
+- **Template RPC `o4cbdc` (ADD_SOURCE_FILE)** : Modernisation de la structure des paramètres RPC vers le format imbriqué à 3 éléments unifié Google Gemini 3.5 (`[ [[filename]], notebookId, [2, null, null, [1, null, ..., [1]]] ]`), éliminant l'ancienne structure plate à 4 éléments.
+- **Harmonisation Domaine Upload** : Ciblage direct du domaine d'upload canonique `https://notebooklm.google.com/upload/_/` pour l'initialisation resumable.
+- **Performance & Capture Native C++** : Simplification du pipeline de capture d'écran dans `handleScreenshot` via la conversion native directe `fetch(dataUrl).then(r => r.blob())`, préservant nativement le MIME type `image/png` sans allocations mémoires superflues.
+
+---
+
 ## [v6.2.4] — 2026-10-24
 
 ### 🛡️ Sécurité & Cloisonnement

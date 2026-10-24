@@ -546,14 +546,13 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
     // ╔════════════════════════════════════════════════════════╗
     // ║ ÉTAPE 1 : Enregistrer l'intention de source (RPC)     ║
     // ║ RPC ID: o4cbdc (ADD_SOURCE_FILE)                      ║
-    // ║ Params: [[[filename]], notebook_id, [2], [1,...,[1]]]  ║
+    // ║ Template imbriqué unifié Gemini 3.5 / 2026 (#1546)     ║
     // ╚════════════════════════════════════════════════════════╝
     const registerRpcId = "o4cbdc";
     const registerParams = [
         [[filename]],
         notebookId,
-        [2],
-        [1, null, null, null, null, null, null, null, null, null, [1]]
+        [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]]
     ];
 
     const registerResult = await sendBatchExecute(registerRpcId, registerParams, authuserIndex);
@@ -566,10 +565,11 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
 
     // ╔════════════════════════════════════════════════════════╗
     // ║ ÉTAPE 2 : Démarrer le upload resumable                ║
-    // ║ POST https://notebook.google.com/upload/_/           ║
+    // ║ POST https://notebooklm.google.com/upload/_/          ║
     // ║ Headers: x-goog-upload-command: start                 ║
     // ╚════════════════════════════════════════════════════════╝
-    const uploadStartUrl = `https://notebook.google.com/upload/_/?authuser=${authuserIndex}`;
+    const uploadStartUrl = `https://notebooklm.google.com/upload/_/?authuser=${authuserIndex}`;
+    const contentType = blob.type || 'application/octet-stream';
 
     const startBody = JSON.stringify({
         "PROJECT_ID": notebookId,
@@ -584,11 +584,12 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
             'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
             'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebook.google.com',
-            'Referer': 'https://notebook.google.com/',
+            'Origin': 'https://notebooklm.google.com',
+            'Referer': 'https://notebooklm.google.com/',
             'x-goog-authuser': String(authuserIndex),
             'x-goog-upload-command': 'start',
             'x-goog-upload-header-content-length': String(blob.size),
+            'x-goog-upload-header-content-type': contentType,
             'x-goog-upload-protocol': 'resumable'
         },
         body: startBody,
@@ -614,10 +615,10 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
         method: 'POST',
         headers: {
             'Accept': '*/*',
-            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+            'Content-Type': contentType,
             'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebook.google.com',
-            'Referer': 'https://notebook.google.com/',
+            'Origin': 'https://notebooklm.google.com',
+            'Referer': 'https://notebooklm.google.com/',
             'x-goog-authuser': String(authuserIndex),
             'x-goog-upload-command': 'upload, finalize',
             'x-goog-upload-offset': '0'

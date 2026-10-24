@@ -621,9 +621,9 @@ async function handleScreenshot(ctx) {
     notifyUI("STATUS_UPDATE", { i18nKey: "statusScreenshot", status: "info" });
 
     const dataUrl = await browser.tabs.captureVisibleTab(null, { format: 'png' });
-    const base64 = dataUrl.split(',')[1];
-    const bytes = await base64ToUint8Array(base64);
-    const pngBlob = new Blob([bytes], { type: 'image/png' });
+    // MAJ-ROB-4 : Conversion Data URI -> Blob native rapide en C++ préservant nativement le MIME type image/png
+    const resp = await fetch(dataUrl);
+    const pngBlob = await resp.blob();
     const screenshotFilename = `${cleanTitle}.png`;
 
     notifyUI("STATUS_UPDATE", { i18nKey: "statusUploadScreenshot", status: "info" });

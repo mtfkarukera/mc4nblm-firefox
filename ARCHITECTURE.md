@@ -62,15 +62,16 @@
   - Client RPC batchexecute envoyant les requêtes vers `https://notebook.google.com/_/LabsTailwindUi/data/batchexecute`.
   - Intègre des timeouts stricts (`AbortSignal.timeout`) de 30s à 180s pour prévenir les requêtes suspendues.
   - Intègre une conversion native Data URI ➔ Blob en C++ sans allocation massive synchrone.
-
-- **`capture_store.js`** :
-  - Gère la mise en cache de la dernière capture en `browser.storage.session` avec protection contre les dépassements de quota (`try/catch`).
-  - Gère le verrou anti-concurrent `captureInProgress` avec auto-reset de sécurité (TTL 3 minutes).
+  - Implémente le protocole Google Scotty Resumable Upload en 3 étapes avec déclaration explicite du MIME type (`x-goog-upload-header-content-type`) et transmission du type MIME réel à la finalisation.
   - RPC IDs pris en charge :
     - `wXbhsf` : Listing des carnets
     - `CCqFvf` : Création de carnet
     - `izAoDd` : Import Texte / URL / Google Drive
-    - `o4cbdc` : Register upload resumable (fichiers binaires & PNG)
+    - `o4cbdc` : Register upload resumable (template imbriqué 3 éléments #1546 pour fichiers binaires & PNG)
+
+- **`capture_store.js`** :
+  - Gère la mise en cache de la dernière capture en `browser.storage.session` avec protection contre les dépassements de quota (`try/catch`).
+  - Gère le verrou anti-concurrent `captureInProgress` avec auto-reset de sécurité (TTL 3 minutes).
 
 - **`detection.js`** :
   - Détecte dynamiquement le type de contenu de l'onglet actif (Page web, PDF, Image, Média, Google Docs/Sheets/Slides, Fichier Drive hébergé).
