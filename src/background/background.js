@@ -617,13 +617,14 @@ function notifySuccess(cleanTitle, format) {
  * @param {Object} ctx - Contexte buildCaptureContext().
  */
 async function handleScreenshot(ctx) {
-    const { finalNotebookId, cleanTitle, activeIndex } = ctx;
+    const { finalNotebookId, cleanTitle, activeIndex, activeTab } = ctx;
     notifyUI("STATUS_UPDATE", { i18nKey: "statusScreenshot", status: "info" });
 
-    const dataUrl = await browser.tabs.captureVisibleTab(null, { format: 'png' });
-    // MAJ-ROB-4 : Conversion Data URI -> Blob native rapide en C++ préservant nativement le MIME type image/png
+    const dataUrl = await browser.tabs.captureVisibleTab(activeTab?.windowId ?? null, { format: 'png' });
+    // MAJ-ROB-4 : Conversion Data URI -> Blob native rapide en C++ avec garantie explicite du MIME type image/png
     const resp = await fetch(dataUrl);
-    const pngBlob = await resp.blob();
+    const rawBlob = await resp.blob();
+    const pngBlob = rawBlob.type === 'image/png' ? rawBlob : new Blob([rawBlob], { type: 'image/png' });
     const screenshotFilename = `${cleanTitle}.png`;
 
     notifyUI("STATUS_UPDATE", { i18nKey: "statusUploadScreenshot", status: "info" });

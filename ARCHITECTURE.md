@@ -2,7 +2,7 @@
 
 > **Extension Firefox (Manifest V3)**  
 > **Auteur & Conception** : MTF Karukera  
-> **Version de référence** : v6.2.4 (Octobre 2026)
+> **Version de référence** : v6.2.6 (Octobre 2026)
 
 ---
 
@@ -62,7 +62,7 @@
   - Client RPC batchexecute envoyant les requêtes vers `https://notebook.google.com/_/LabsTailwindUi/data/batchexecute`.
   - Intègre des timeouts stricts (`AbortSignal.timeout`) de 30s à 180s pour prévenir les requêtes suspendues.
   - Intègre une conversion native Data URI ➔ Blob en C++ sans allocation massive synchrone.
-  - Implémente le protocole Google Scotty Resumable Upload en 3 étapes avec déclaration explicite du MIME type (`x-goog-upload-header-content-type`) et transmission du type MIME réel à la finalisation.
+  - Implémente le protocole Google Scotty Resumable Upload en 3 étapes sur `https://notebook.google.com/upload/_/` avec déclaration explicite du MIME type (`x-goog-upload-header-content-type`) à l'étape 2 (`start`) et `'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'` à l'étape 3 (`upload, finalize`).
   - RPC IDs pris en charge :
     - `wXbhsf` : Listing des carnets
     - `CCqFvf` : Création de carnet

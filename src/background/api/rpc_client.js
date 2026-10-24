@@ -83,13 +83,14 @@ function buildRequestBody(rpcRequest, csrfToken) {
 /**
  * Construit la query string de l'URL batchexecute.
  *
- * @param  {string} rpcId - Identifiant de la procédure RPC.
- * @returns {string}       - Query string prête à être concaténée à l'URL de l'endpoint.
+ * @param  {string} rpcId             - Identifiant de la procédure RPC.
+ * @param  {string} [sourcePath='/']  - Chemin source (ex: '/notebook/{id}' pour les opérations sur un carnet).
+ * @returns {string}                  - Query string prête à être concaténée à l'URL de l'endpoint.
  */
-function buildQueryParams(rpcId) {
+function buildQueryParams(rpcId, sourcePath = '/') {
     return new URLSearchParams({
         'rpcids': rpcId,
-        'source-path': '/',
+        'source-path': sourcePath,
         'hl': 'en',
         'rt': 'c'   // Chunked response mode
     }).toString();
@@ -257,11 +258,12 @@ export function validateAndExtractRpcResponse(rawResponse, rpcId) {
  * @param  {string} rpcId             - Identifiant de la procédure RPC (ex: "izAoDd").
  * @param  {Array}  jsonArgs           - Arguments JSON de la requête RPC.
  * @param  {number} [authuserIndex=0] - Index du compte Google actif (multi-compte).
+ * @param  {string} [sourcePath='/']  - Chemin source contextuel (ex: `/notebook/${notebookId}`).
  * @returns {Promise<any>}             - Payload décodé de la réponse batchexecute.
  * @throws  {Error}                    - Si l'authentification est absente ou HTTP 4xx/5xx.
  * @throws  {RpcApiChangedError}       - Si la structure de la réponse est inattendue.
  */
-export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0) {
+export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0, sourcePath = '/') {
     const csrfKey = `nblm_csrf_${authuserIndex}`;
     // Sécurité (SEC-03) : Lecture en mémoire volatile (storage.session) avec fallback rétro-compatible
     let data = await browser.storage.session.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
@@ -277,12 +279,13 @@ export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0) {
     // Encoder la requête RPC
     const rpcRequest = encodeRpcRequest(rpcId, jsonArgs);
     const body = buildRequestBody(rpcRequest, csrfToken);
-    const queryString = buildQueryParams(rpcId);
+    const queryString = buildQueryParams(rpcId, sourcePath);
     const endpoint = `https://notebook.google.com/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuserIndex}`;
 
     // MAJ-ROB-2 : Timeout de 30s sur l'appel RPC batchexecute
     const response = await fetch(endpoint, {
         method: 'POST',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
             'Cookie': data.nblm_personal_cookie
@@ -411,7 +414,7 @@ export async function addTextSource(notebookId, title, content, authuserIndex = 
         null,
     ];
     
-    await sendBatchExecute(rpcId, params, authuserIndex);
+    await sendBatchExecute(rpcId, params, authuserIndex, `/notebook/${notebookId}`);
     return true;
 }
 
@@ -440,7 +443,7 @@ export async function addUrlSource(notebookId, url, authuserIndex = 0) {
         null,
     ];
     
-    await sendBatchExecute(rpcId, params, authuserIndex);
+    await sendBatchExecute(rpcId, params, authuserIndex, `/notebook/${notebookId}`);
     return true;
 }
 
@@ -479,7 +482,7 @@ export async function addDriveSource(notebookId, fileId, mimeType, title, authus
         [1, null, null, null, null, null, null, null, null, null, [1]]
     ];
     
-    await sendBatchExecute(rpcId, params, authuserIndex);
+    await sendBatchExecute(rpcId, params, authuserIndex, `/notebook/${notebookId}`);
     return true;
 }
 
@@ -511,8 +514,71 @@ export async function addYouTubeSource(notebookId, url, authuserIndex = 0) {
         [1, null, null, null, null, null, null, null, null, null, [1]],
     ];
     
-    await sendBatchExecute(rpcId, params, authuserIndex);
+    await sendBatchExecute(rpcId, params, authuserIndex, `/notebook/${notebookId}`);
     return true;
+}
+
+/**
+ * Table de correspondance extension -> MIME type pour fiabiliser le handshake Scotty
+ * lorsque blob.type est vide ou générique (aligné sur notebooklm-py _resolve_upload_content_type).
+ */
+const EXTENSION_MIME_FALLBACKS = {
+    '.pdf': 'application/pdf',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.bmp': 'image/bmp',
+    '.tiff': 'image/tiff',
+    '.heic': 'image/heic',
+    '.heif': 'image/heif',
+    '.avif': 'image/avif',
+    '.md': 'text/markdown',
+    '.markdown': 'text/markdown',
+    '.txt': 'text/plain',
+    '.csv': 'text/csv',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.ogg': 'audio/ogg',
+    '.m4a': 'audio/mp4',
+    '.aac': 'audio/aac',
+    '.flac': 'audio/flac',
+    '.opus': 'audio/opus',
+    '.mp4': 'video/mp4',
+    '.mov': 'video/quicktime',
+    '.avi': 'video/x-msvideo',
+    '.mkv': 'video/x-matroska',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.epub': 'application/epub+zip'
+};
+
+/**
+ * Résout le type MIME d'un Blob pour l'en-tête x-goog-upload-header-content-type de Scotty.
+ * Privilégie le type MIME natif du Blob (nettoyé d'éventuels paramètres charset) s'il est spécifique,
+ * sinon infère le type à partir de l'extension du nom de fichier.
+ *
+ * @param  {Blob}   blob     - Blob binaire à uploader.
+ * @param  {string} filename - Nom du fichier avec extension.
+ * @returns {string}         - Type MIME résolu (ex: "image/png", "application/pdf").
+ */
+function resolveUploadContentType(blob, filename) {
+    if (blob && typeof blob.type === 'string') {
+        const cleanMime = blob.type.split(';')[0].trim().toLowerCase();
+        if (cleanMime && cleanMime !== 'application/octet-stream') {
+            return cleanMime;
+        }
+    }
+    if (typeof filename === 'string') {
+        const dotIdx = filename.lastIndexOf('.');
+        if (dotIdx !== -1) {
+            const ext = filename.slice(dotIdx).toLowerCase();
+            if (EXTENSION_MIME_FALLBACKS[ext]) {
+                return EXTENSION_MIME_FALLBACKS[ext];
+            }
+        }
+    }
+    return 'application/octet-stream';
 }
 
 /**
@@ -555,7 +621,12 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
         [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]]
     ];
 
-    const registerResult = await sendBatchExecute(registerRpcId, registerParams, authuserIndex);
+    const registerResult = await sendBatchExecute(
+        registerRpcId,
+        registerParams,
+        authuserIndex,
+        `/notebook/${notebookId}`
+    );
 
     // Extraire le SOURCE_ID de la réponse (structure imbriquée: [[[[id]]]] ou similaire)
     const sourceId = extractFirstString(registerResult);
@@ -565,11 +636,11 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
 
     // ╔════════════════════════════════════════════════════════╗
     // ║ ÉTAPE 2 : Démarrer le upload resumable                ║
-    // ║ POST https://notebooklm.google.com/upload/_/          ║
+    // ║ POST https://notebook.google.com/upload/_/            ║
     // ║ Headers: x-goog-upload-command: start                 ║
     // ╚════════════════════════════════════════════════════════╝
-    const uploadStartUrl = `https://notebooklm.google.com/upload/_/?authuser=${authuserIndex}`;
-    const contentType = blob.type || 'application/octet-stream';
+    const uploadStartUrl = `https://notebook.google.com/upload/_/?authuser=${authuserIndex}`;
+    const contentType = resolveUploadContentType(blob, filename);
 
     const startBody = JSON.stringify({
         "PROJECT_ID": notebookId,
@@ -580,12 +651,13 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
     // MAJ-ROB-2 : Timeout de 30s sur l'initialisation de l'upload resumable
     const startResponse = await fetch(uploadStartUrl, {
         method: 'POST',
+        credentials: 'include',
         headers: {
             'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
             'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebooklm.google.com',
-            'Referer': 'https://notebooklm.google.com/',
+            'Origin': 'https://notebook.google.com',
+            'Referer': 'https://notebook.google.com/',
             'x-goog-authuser': String(authuserIndex),
             'x-goog-upload-command': 'start',
             'x-goog-upload-header-content-length': String(blob.size),
@@ -613,12 +685,13 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
     // MAJ-ROB-2 : Timeout de 180s sur l'upload binaire effectif
     const finalizeResponse = await fetch(uploadUrl, {
         method: 'POST',
+        credentials: 'include',
         headers: {
             'Accept': '*/*',
-            'Content-Type': contentType,
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
             'Cookie': data.nblm_personal_cookie,
-            'Origin': 'https://notebooklm.google.com',
-            'Referer': 'https://notebooklm.google.com/',
+            'Origin': 'https://notebook.google.com',
+            'Referer': 'https://notebook.google.com/',
             'x-goog-authuser': String(authuserIndex),
             'x-goog-upload-command': 'upload, finalize',
             'x-goog-upload-offset': '0'
@@ -661,16 +734,19 @@ export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle =
 }
 
 /**
- * Extraie récursivement la première string d'une structure imbriquée de tableaux.
- * Utilisé pour parser le SOURCE_ID depuis [[[[id]]]] ou [[[id]]] etc.
+ * Extraie récursivement la première string non vide d'une structure imbriquée de tableaux.
+ * Supporte à la fois les enveloppes directes [[[[id]]]] et préfixées [null, [[[[id]]]]].
  *
  * @param  {any} data - Structure imbriquée (string, Array, ou autre).
  * @returns {string|null} - Première string trouvée, ou null si aucune.
  */
 function extractFirstString(data) {
-    if (typeof data === 'string') return data;
-    if (Array.isArray(data) && data.length > 0) {
-        return extractFirstString(data[0]);
+    if (typeof data === 'string' && data.trim()) return data.trim();
+    if (Array.isArray(data)) {
+        for (const item of data) {
+            const found = extractFirstString(item);
+            if (found) return found;
+        }
     }
     return null;
 }

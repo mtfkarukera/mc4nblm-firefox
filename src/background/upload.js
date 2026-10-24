@@ -28,8 +28,11 @@ export async function uploadFileBlob(notebookId, blob, filename, authuserIndex =
  */
 export function extractFirstStringFromResult(data) {
     if (typeof data === 'string') return data;
-    if (Array.isArray(data) && data.length > 0) {
-        return extractFirstStringFromResult(data[0]);
+    if (Array.isArray(data)) {
+        for (const item of data) {
+            const result = extractFirstStringFromResult(item);
+            if (result) return result;
+        }
     }
     return null;
 }

@@ -4,6 +4,16 @@ Toutes les modifications majeures apportées au projet **Magic Clipper for Gemin
 
 ---
 
+## [v6.2.6] — 2026-10-24
+
+### 🐛 Correctif Critique — Cohérence Domaine Scotty & Finalisation Upload
+- **Restauration Domaine Scotty (`notebook.google.com`)** : Correction de l'URL d'initialisation resumable (`https://notebook.google.com/upload/_/`) ainsi que des headers `Origin` et `Referer` dans les étapes 2 et 3 d'`uploadBlob()`. Élimine le décalage de domaine avec l'étape 1 (`o4cbdc` sur `notebook.google.com`) et garantit l'envoi automatique du cookie host-only `OSID` par le moteur réseau de Firefox (`credentials: 'include'`).
+- **Conformité Header Finalize (`upload, finalize`)** : Restauration du header `'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'` sur l'étape 3 (conforme à l'implémentation de référence `notebooklm-py` et aux traces VCR `server_add_file.yaml`), tandis que le type MIME du fichier reste déclaré à l'étape 2 via `'x-goog-upload-header-content-type'`.
+- **Contexte RPC `source-path` par Carnet** : Transmission dynamique de `source-path=/notebook/${notebookId}` sur les appels RPC rattachés à un carnet (`o4cbdc`, `izAoDd`).
+- **Résolution MIME Déterministe & Capture PNG** : Ajout de `resolveUploadContentType(blob, filename)` avec table d'extensions de secours (`EXTENSION_MIME_FALLBACKS`), parcours exhaustif dans `extractFirstString()`, et ciblage explicite de `activeTab.windowId` avec typage `image/png` garanti dans `handleScreenshot()`.
+
+---
+
 ## [v6.2.5] — 2026-10-24
 
 ### 🐛 Correctif Critique — Protocole Scotty & Ingestion Multimodale
