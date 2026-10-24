@@ -1,6 +1,6 @@
 # 📎 Magic Clipper for Gemini Notebook — Extension Firefox MV3
 
-![Release](https://img.shields.io/badge/release-v6.2.3-blue.svg)
+![Release](https://img.shields.io/badge/release-v6.2.4-blue.svg)
 ![License](https://img.shields.io/badge/license-MPL--2.0-green.svg)
 
 Capturez le contenu de n'importe quelle page web et importez-le directement dans un carnet **Google Gemini Notebook** (anciennement NotebookLM) — en **PDF**, **Markdown**, **URL directe**, **Screenshot**, **Import Direct**, **Sélection de texte** ou **☁️ Google Drive natif**. Compatible **Firefox Desktop et Android**. Optimisé pour l'analyse par Gemini (grounding IA intégré).
@@ -53,6 +53,8 @@ L'historique complet des versions et corrections est disponible dans le fichier 
 👉 **[Consulter CHANGELOG.md](CHANGELOG.md)**
 
 ### Dernières versions :
+- **v6.2.4** : Correctif sécurité & robustesse (confinement RAM volatile des cookies maîtres, cloisonnement des messages, élimination de la race condition d'onglet, timeouts RPC, Roving Tabindex WAI-ARIA et refonte accessible du bouton Fermer).
+- **v6.2.3** : Migration critique vers le nouveau domaine officiel `notebook.google.com`.
 - **v6.2.2** : Correctif critique de la clé CSRF multi-comptes (`ROB-2`), rétablissant la récupération instantanée des carnets.
 - **v6.2.1** : Adoption officielle du nom **Google Gemini Notebook** (anciennement NotebookLM) avec support de 6 locales (FR, EN, GCF, ES, DE, VI).
 - **v6.2.0** : Audit complet sécurité (SSRF image proxy), robustesse (base64 async, timeout HEAD), accessibilité (`aria-busy`, touch targets 44px) et polish CSS Glassmorphism.

@@ -237,9 +237,8 @@ export function validateAndExtractRpcResponse(rawResponse, rpcId) {
 
     // Étape 3 — La structure contient-elle des données exploitables ?
     if (result === null || result === undefined) {
-        // Aperçu brut sans sanitisation locale (sanitisation dans background.js uniquement)
-        const preview = rawResponse.slice(0, 500);
-        console.warn(`[MC] Réponse RPC ${rpcId} — structure inattendue. Aperçu brut :`, preview);
+        // Sécurité (SEC-04) : Pas d'aperçu brut loggué pour éviter d'exposer des données privées
+        console.warn(`[MC] Réponse RPC ${rpcId} — structure inattendue ou résultat vide.`);
         throw new RpcApiChangedError(rpcId);
     }
 
@@ -264,7 +263,12 @@ export function validateAndExtractRpcResponse(rawResponse, rpcId) {
  */
 export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0) {
     const csrfKey = `nblm_csrf_${authuserIndex}`;
-    const data = await browser.storage.local.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+    // Sécurité (SEC-03) : Lecture en mémoire volatile (storage.session) avec fallback rétro-compatible
+    let data = await browser.storage.session.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+    if (!data.nblm_personal_cookie || !(data[csrfKey] || data.nblm_csrf)) {
+        const localData = await browser.storage.local.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+        data = { ...localData, ...data };
+    }
     const csrfToken = data[csrfKey] || data.nblm_csrf;
     if (!data.nblm_personal_cookie || !csrfToken) {
         throw new Error("Authentification personnelle non finalisée.");
@@ -276,18 +280,23 @@ export async function sendBatchExecute(rpcId, jsonArgs, authuserIndex = 0) {
     const queryString = buildQueryParams(rpcId);
     const endpoint = `https://notebook.google.com/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuserIndex}`;
 
+    // MAJ-ROB-2 : Timeout de 30s sur l'appel RPC batchexecute
     const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
             'Cookie': data.nblm_personal_cookie
         },
-        body: body
+        body: body,
+        signal: AbortSignal.timeout(30_000)
     });
 
     if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
-            await browser.storage.local.remove(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+            await Promise.all([
+                browser.storage.session.remove(['nblm_personal_cookie', csrfKey, 'nblm_csrf']).catch(() => {}),
+                browser.storage.local.remove(['nblm_personal_cookie', csrfKey, 'nblm_csrf']).catch(() => {})
+            ]);
             throw new Error("Jeton RPC rejeté (401/403). Veuillez rafraîchir votre session NotebookLM.");
         }
         throw new Error(`Erreur réseau batchexecute: ${response.status}`);
@@ -345,7 +354,7 @@ export async function listPersonalNotebooks(authuserIndex = 0) {
     }
     
     if (notebooks.length === 0) {
-       console.warn('[MC] Parsing carnets échoué. Structure brute:', JSON.stringify(result).substring(0, 2000));
+       console.warn('[MC] Parsing carnets : aucun carnet valide extrait de la réponse.');
     }
     
     return notebooks;
@@ -523,7 +532,12 @@ export async function addYouTubeSource(notebookId, url, authuserIndex = 0) {
 export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) {
 
     const csrfKey = `nblm_csrf_${authuserIndex}`;
-    const data = await browser.storage.local.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+    // Sécurité (SEC-03) : Lecture en mémoire volatile (storage.session) avec fallback rétro-compatible
+    let data = await browser.storage.session.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+    if (!data.nblm_personal_cookie || !(data[csrfKey] || data.nblm_csrf)) {
+        const localData = await browser.storage.local.get(['nblm_personal_cookie', csrfKey, 'nblm_csrf']);
+        data = { ...localData, ...data };
+    }
     const csrfToken = data[csrfKey] || data.nblm_csrf;
     if (!data.nblm_personal_cookie || !csrfToken) {
         throw new Error("Authentification personnelle non finalisée.");
@@ -563,6 +577,7 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
         "SOURCE_ID": sourceId
     });
 
+    // MAJ-ROB-2 : Timeout de 30s sur l'initialisation de l'upload resumable
     const startResponse = await fetch(uploadStartUrl, {
         method: 'POST',
         headers: {
@@ -576,7 +591,8 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
             'x-goog-upload-header-content-length': String(blob.size),
             'x-goog-upload-protocol': 'resumable'
         },
-        body: startBody
+        body: startBody,
+        signal: AbortSignal.timeout(30_000)
     });
 
     if (!startResponse.ok) {
@@ -593,6 +609,7 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
     // ║ POST vers l'upload URL obtenue à l'étape 2            ║
     // ║ Headers: x-goog-upload-command: upload, finalize      ║
     // ╚════════════════════════════════════════════════════════╝
+    // MAJ-ROB-2 : Timeout de 180s sur l'upload binaire effectif
     const finalizeResponse = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
@@ -605,7 +622,8 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
             'x-goog-upload-command': 'upload, finalize',
             'x-goog-upload-offset': '0'
         },
-        body: blob
+        body: blob,
+        signal: AbortSignal.timeout(180_000)
     });
 
     if (!finalizeResponse.ok) {
@@ -630,14 +648,9 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
  */
 export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle = null, authuserIndex = 0) {
 
-    // Convertir le data URI en Blob binaire
-    const base64Content = pdfDataUri.split(',')[1]; // Retirer le préfixe "data:application/pdf;base64,"
-    const binaryString = atob(base64Content);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
+    // MAJ-ROB-4 : Conversion Data URI -> Blob native rapide en C++ sans allocation massive atob
+    const resp = await fetch(pdfDataUri);
+    const pdfBlob = await resp.blob();
 
     const filename = customTitle
         ? `${customTitle}.pdf`

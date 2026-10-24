@@ -1,23 +1,41 @@
 // capture_store.js : Persistance des captures en browser.storage.session
 
-// Capture en cours (verrou anti-concurrent)
+// Capture en cours (verrou anti-concurrent) avec auto-reset de sécurité (3 min)
 let captureInProgress = false;
+let captureStartTime = 0;
+const CAPTURE_TIMEOUT_MS = 180_000;
 
-export function isCapturing() { return captureInProgress; }
-export function setCapturing(val) { captureInProgress = val; }
+export function isCapturing() {
+    if (captureInProgress && (Date.now() - captureStartTime > CAPTURE_TIMEOUT_MS)) {
+        console.warn('[MC] Verrou de capture auto-réinitialisé après expiration du délai de 3 min.');
+        captureInProgress = false;
+        captureStartTime = 0;
+    }
+    return captureInProgress;
+}
+
+export function setCapturing(val) {
+    captureInProgress = Boolean(val);
+    captureStartTime = captureInProgress ? Date.now() : 0;
+}
 
 /**
  * Stocke une capture dans browser.storage.session pour survivre aux rechargements
  * de l'Event Page. TTL de 10 minutes pour éviter les fuites mémoire.
+ * Protégé contre les erreurs de dépassement de quota (QuotaExceededError).
  *
  * @param {string|null} data     - Données de capture (base64 PDF ou texte MD).
  * @param {string|null} filename - Nom de fichier sans extension.
  * @param {string|null} format   - "pdf" ou "md".
  */
 export async function saveCapture(data, filename, format) {
-    await browser.storage.session.set({
-        nwc_last_capture: { data, filename, format, ts: Date.now() }
-    });
+    try {
+        await browser.storage.session.set({
+            nwc_last_capture: { data, filename, format, ts: Date.now() }
+        });
+    } catch (err) {
+        console.warn('[MC] Impossible de sauvegarder la capture en session (quota possible) :', err.message);
+    }
 }
 
 /**

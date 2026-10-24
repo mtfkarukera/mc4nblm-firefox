@@ -4,6 +4,28 @@ Toutes les modifications majeures apportées au projet **Magic Clipper for Gemin
 
 ---
 
+## [v6.2.4] — 2026-10-24
+
+### 🛡️ Sécurité & Cloisonnement
+- **SEC-1 (Émetteurs)** : Cloisonnement strict des messages du background script (`!sender.tab`). Les actions de gestion sensibles (`GET_ACCOUNTS`, `GET_NOTEBOOKS`, `CREATE_NOTEBOOK`, `START_CAPTURE`) sont désormais strictement inaccessibles depuis les content scripts des pages web tierces.
+- **SEC-2 (SSRF)** : Protection avancée sur le proxy d'images `FETCH_IMAGE` avec blocage des hôtes locaux et adresses IP privées (`localhost`, `127.0.0.1`, `10.*`, `172.16-31.*`, `192.168.*`, `169.254.*`) et validation stricte du header `Content-Type: image/*`.
+- **SEC-3 (Confinement RAM)** : Confinement des cookies maîtres Google et des jetons CSRF dans la mémoire vive volatile de l'extension (`browser.storage.session`). Élimination complète de la persistance de cookies sensibles sur le disque (`storage.local`).
+- **SEC-4 & SEC-5 (Logs)** : Assainissement étendu des logs d'erreurs et masquage de l'ensemble des cookies de session Google et tokens d'authentification.
+
+### ⚙️ Robustesse & Fiabilité
+- **ROB-1 (IPC)** : Résolution systématique de la promesse `START_CAPTURE` via `sendResponse` dans toutes les branches d'exécution, éliminant tout blocage indéfini du canal de communication.
+- **ROB-2 (Race Condition)** : Résolution déterministe de l'onglet actif (`targetTab`) dès l'initialisation du workflow, évitant toute bascule vers le mauvais onglet lors de changements rapides de focus.
+- **ROB-3 (Réseau)** : Intégration de timeouts `AbortSignal.timeout` sur les appels RPC `batchexecute`, la détection de comptes et l'upload binaire resumable.
+- **ROB-4 (Mémoire & Performance)** : Conversion directe Data URI ➔ Blob via l'API `fetch` native en C++, supprimant les ralentissements et pics mémoire de `atob()` sur les documents volumineux.
+- **ROB-5 (Storage Quota)** : Protection défensive non-bloquante (`try/catch`) sur `saveCapture` et auto-reset de sécurité (TTL 3 min) sur le verrou de capture.
+
+### ♿ Accessibilité (WCAG 2.1 AA) & Design UX
+- **A11Y-1 (Clavier)** : Implémentation du pattern WAI-ARIA Roving Tabindex sur la liste des carnets (`#notebook-list`). Seul le carnet sélectionné porte `tabindex="0"`, permettant de traverser toute la liste en une seule tabulation `Tab`.
+- **A11Y-2 & DES-1 (Contraste & Ergonomie)** : Refonte complète du bouton Fermer (`.close-btn`) en style secondaire neutre élégant, supprimant le rouge alerte destructif et garantissant des ratios de contraste certifiés WCAG AA (> 5.2:1 en mode clair, > 6.4:1 en mode sombre).
+- **A11Y-3 (Focus)** : Ajout d'indicateurs de focus visibles et nets (`:focus-visible`) sur les éléments de carnets et le bouton Fermer.
+
+---
+
 ## [v6.2.3] — 2026-07-31
 
 ### 🔴 Correctif Critique — Migration vers notebook.google.com

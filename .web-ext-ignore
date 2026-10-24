@@ -21,3 +21,5 @@ dist/
 artifacts/
 *.zip
 *.xpi
+
+publication/

@@ -1,11 +1,11 @@
 // auth_personal.js : Rétro-ingénierie d'authentification pour les comptes Google classiques
 
 // Les cookies de session (SID, HSID, SSID, etc.) sont extraits automatiquement
-// par browser.cookies.getAll() sur le domaine notebooklm.google.com.
+// par browser.cookies.getAll() sur le domaine notebook.google.com.
 
 /**
  * Lit les cookies de session NotebookLM depuis le cookie jar Firefox et les stocke
- * dans browser.storage.local pour les requêtes RPC ultérieures.
+ * dans browser.storage.session (RAM volatile) pour les requêtes RPC ultérieures.
  *
  * @returns {Promise<string>} - Chaîne cookie concaténée (ex: "SID=…; HSID=…").
  * @throws  {Error}           - Si aucun cookie n'est trouvé (utilisateur déconnecté).
@@ -25,15 +25,18 @@ export async function getPersonalAuthCookies() {
   // car certains cookies secondaires peuvent manquer sans casser l'API.
   const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
 
-  // Stockage sécurisé en mémoire MV3 (sans log)
-  await browser.storage.local.set({ nblm_personal_cookie: cookieString });
+  // Sécurité (SEC-03) : stockage en mémoire volatile RAM via browser.storage.session (jamais écrit sur disque)
+  await browser.storage.session.set({ nblm_personal_cookie: cookieString });
+  // Nettoyage défensif : purger toute trace résiduelle de storage.local
+  await browser.storage.local.remove('nblm_personal_cookie').catch(() => {});
+
   return cookieString;
 }
 
 /**
  * Récupère le jeton CSRF dynamique SNlM0e depuis la page NotebookLM.
  * Ce jeton est requis pour signer chaque payload batchexecute.
- * Le jeton extrait est stocké dans browser.storage.local sous la clé nblm_csrf.
+ * Le jeton extrait est stocké en mémoire vive dans browser.storage.session.
  *
  * @param  {string} cookieString      - Chaîne cookie produite par getPersonalAuthCookies().
  * @param  {number} [authuserIndex=0] - Index du compte Google actif (multi-compte).
@@ -41,10 +44,14 @@ export async function getPersonalAuthCookies() {
  * @throws  {Error}                    - Si la session est expirée (401/403) ou si le token est absent de la page.
  */
 export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
-  // ROB-2 : cache CSRF indexé par compte pour éviter les collisions multi-comptes
+  // ROB-2 / SEC-03 : cache CSRF indexé par compte en mémoire volatile (storage.session)
   const csrfKey = `nblm_csrf_${authuserIndex}`;
   const csrfTsKey = `nblm_csrf_ts_${authuserIndex}`;
-  const stored = await browser.storage.local.get([csrfKey, csrfTsKey]);
+  let stored = await browser.storage.session.get([csrfKey, csrfTsKey]);
+  if (!stored[csrfKey]) {
+    // Fallback transparent si présent en storage.local
+    stored = await browser.storage.local.get([csrfKey, csrfTsKey]);
+  }
   if (stored[csrfKey] && stored[csrfTsKey] && (Date.now() - stored[csrfTsKey] < 5 * 60 * 1000)) {
     return stored[csrfKey];
   }
@@ -61,7 +68,10 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      await browser.storage.local.remove(['nblm_personal_cookie', csrfKey, csrfTsKey, 'nblm_csrf', 'nblm_csrf_ts']);
+      await Promise.all([
+        browser.storage.session.remove(['nblm_personal_cookie', csrfKey, csrfTsKey, 'nblm_csrf', 'nblm_csrf_ts']).catch(() => {}),
+        browser.storage.local.remove(['nblm_personal_cookie', csrfKey, csrfTsKey, 'nblm_csrf', 'nblm_csrf_ts']).catch(() => {})
+      ]);
       throw new Error("Session NotebookLM expirée (HTTP 401/403).");
     }
     throw new Error(`HTTP Error ${response.status}`);
@@ -73,12 +83,14 @@ export async function fetchCSRFToken(cookieString, authuserIndex = 0) {
   const match = html.match(/"SNlM0e":"([^"]+)"/);
   if (match && match[1]) {
     const csrfToken = match[1];
-    await browser.storage.local.set({ 
+    await browser.storage.session.set({ 
       [csrfKey]: csrfToken, 
       [csrfTsKey]: Date.now(),
       nblm_csrf: csrfToken,
       nblm_csrf_ts: Date.now()
     });
+    // Purger les copies locales sur disque pour éviter la persistance
+    await browser.storage.local.remove([csrfKey, csrfTsKey, 'nblm_csrf', 'nblm_csrf_ts']).catch(() => {});
     return csrfToken;
   } else {
     throw new Error("Token CSRF SNlM0e introuvable sur la page.");
@@ -100,10 +112,12 @@ export async function detectGoogleAccounts(cookieString) {
 
   for (let i = 0; i < MAX_ACCOUNTS; i++) {
     try {
+      // MAJ-ROB-2 : Timeout de 10s pour éviter tout blocage réseau
       const response = await fetch(`https://notebook.google.com/?authuser=${i}`, {
         method: 'GET',
         headers: { 'Cookie': cookieString },
-        redirect: 'manual'  // Ne pas suivre les redirections automatiquement
+        redirect: 'manual',  // Ne pas suivre les redirections automatiquement
+        signal: AbortSignal.timeout(10_000)
       });
 
       // HTTP 302/303 vers login = ce compte n'existe pas

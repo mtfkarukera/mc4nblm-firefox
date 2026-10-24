@@ -1,6 +1,6 @@
 # Privacy Policy — Magic Clipper for Gemini Notebook
 
-**Last updated:** July 27, 2026
+**Last updated:** October 24, 2026
 
 ---
 
@@ -20,7 +20,7 @@ This extension **does not collect, store, transmit, or share any personal data**
 
 | Permission | Purpose |
 |---|---|
-| `storage` | Store user preferences (active account index, locale selection) locally in the browser profile. |
+| `storage` | Store user preferences (active account index, locale selection). Master session cookies and CSRF tokens are kept strictly in volatile RAM memory (`storage.session`) and are never written to disk. |
 | `cookies` | Read existing Google session cookies to authenticate requests to Gemini Notebook (no cookies are created or modified). |
 | `activeTab` | Access the content of the currently active tab when the user explicitly triggers a capture. |
 | `notifications` | Display OS notifications when an import completes while the popup is closed. |
@@ -54,7 +54,7 @@ Cette extension **ne collecte, ne stocke, ne transmet et ne partage aucune donn�
 
 | Permission | Utilisation |
 |---|---|
-| `storage` | Stocker les préférences utilisateur (index de compte actif, sélection de langue) localement dans le profil du navigateur. |
+| `storage` | Stocker les préférences utilisateur (index de compte actif, sélection de langue). Les cookies maîtres de session et jetons CSRF sont conservés exclusivement en mémoire vive volatile (`storage.session`) et ne sont jamais écrits sur le disque. |
 | `cookies` | Lire les cookies de session Google existants pour authentifier les requêtes vers Gemini Notebook (aucun cookie n'est créé ni modifié). |
 | `activeTab` | Accéder au contenu de l'onglet actif lorsque l'utilisateur déclenche explicitement une capture. |
 | `notifications` | Afficher des notifications système lorsqu'un import est terminé alors que la popup est fermée. |

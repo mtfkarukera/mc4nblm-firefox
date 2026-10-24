@@ -30,14 +30,16 @@ const MAX_BASE64_SIZE_BYTES = 200 * 1024 * 1024 * 1.37;
  * (cookies de session Google et jeton CSRF) dans les logs d'erreurs.
  */
 const SENSITIVE_PATTERNS = [
-    /SID=[^;]+/gi,
-    /HSID=[^;]+/gi,
-    /SSID=[^;]+/gi,
-    /SAPISID=[^;]+/gi,
-    /__Secure-1PSID=[^;]+/gi,
-    /__Secure-3PSID=[^;]+/gi,
-    /SNlM0e[^"]+/gi,
-    /at=[^&]+/gi        // Token CSRF encodé dans les payloads
+    /SID=[^;,\s"]+/gi,
+    /HSID=[^;,\s"]+/gi,
+    /SSID=[^;,\s"]+/gi,
+    /APISID=[^;,\s"]+/gi,
+    /SAPISID=[^;,\s"]+/gi,
+    /OSID=[^;,\s"]+/gi,
+    /__Secure-[^=]+=[^;,\s"]+/gi,
+    /SIDCC=[^;,\s"]+/gi,
+    /SNlM0e[^",\s]+/gi,
+    /at=[^&,\s"]+/gi        // Token CSRF encodé dans les payloads
 ];
 
 /**
@@ -136,9 +138,45 @@ if (browser.contextMenus?.onClicked) {
  * @param  {Function} sendResponse - Callback Firefox pour la réponse synchrone.
  * @returns {true}               - Indique systématiquement une réponse asynchrone.
  */
+/**
+ * Vérifie si une URL cible une adresse locale, loopback ou une plage IP privée (protection SSRF).
+ * @param {string} urlStr - URL à analyser.
+ * @returns {boolean} true si l'hôte est local ou privé.
+ */
+function isLocalOrPrivateHost(urlStr) {
+    try {
+        const u = new URL(urlStr);
+        const host = u.hostname.toLowerCase();
+        if (host === 'localhost' || host.endsWith('.local') || host === '127.0.0.1' || host === '::1' || host === '[::1]') {
+            return true;
+        }
+        if (/^10\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host)) {
+            return true;
+        }
+        if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)) {
+            return true;
+        }
+        return false;
+    } catch {
+        return true;
+    }
+}
+
+const POPUP_ONLY_ACTIONS = new Set([
+    "GET_AUTH_STATUS", "GET_ACCOUNTS", "SET_ACCOUNT", 
+    "GET_NOTEBOOKS", "CREATE_NOTEBOOK", "START_CAPTURE", "DOWNLOAD_CAPTURE"
+]);
+
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Sécurité : valider que le message provient bien de cette extension
     if (sender.id && sender.id !== browser.runtime.id) return false;
+
+    // Sécurité (MAJ-SEC-1) : cloisonner les actions privilégiées réservées à l'UI
+    // Dans Firefox WebExtensions, les messages émis par la popup ont sender.tab === undefined
+    if (sender.tab && POPUP_ONLY_ACTIONS.has(message.action)) {
+        console.warn(`[MC] Tentative d'accès non autorisée à l'action privilégiée ${message.action} depuis un onglet (tabId: ${sender.tab.id}).`);
+        return false;
+    }
 
     if (message.action === "GET_AUTH_STATUS") {
         browser.cookies.getAll({ url: "https://notebook.google.com/" }).then(cookies => {
@@ -221,15 +259,20 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "FETCH_IMAGE") {
         (async () => {
             const { url } = message;
-            // Sécurité : rejeter les schémas non-HTTP pour prévenir les abus SSRF
-            if (!url || !(/^https?:\/\//.test(url))) {
-                sendResponse({ error: 'URL invalide ou schéma non supporté.' });
+            // Sécurité (MAJ-SEC-2) : rejeter les schémas non-HTTP et adresses locales/privées (SSRF)
+            if (!url || !(/^https?:\/\//i.test(url)) || isLocalOrPrivateHost(url)) {
+                sendResponse({ error: 'URL invalide, privée ou schéma non supporté.' });
                 return;
             }
             try {
                 // Sécurité (SEC-1) : credentials omit pour ne pas envoyer les cookies vers des serveurs tiers
                 const resp = await fetch(url, { credentials: 'omit', signal: AbortSignal.timeout(10_000) });
                 if (!resp.ok) { sendResponse({ error: `HTTP ${resp.status}` }); return; }
+                const contentType = resp.headers.get('content-type') || '';
+                if (!contentType.toLowerCase().startsWith('image/')) {
+                    sendResponse({ error: 'Ressource non-image rejetée (Content-Type invalide).' });
+                    return;
+                }
                 const blob = await resp.blob();
                 const reader = new FileReader();
                 reader.onloadend = () => sendResponse({ data: reader.result });
@@ -250,8 +293,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 sendResponse({ error: browser.i18n.getMessage('errNoCapture') });
                 return;
             }
+            let blobUrl = null;
             try {
-                let blobUrl;
                 let ext;
 
                 if (capture.format === "md") {
@@ -279,7 +322,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 const onChanged = (delta) => {
                     if (delta.id !== downloadId) return;
                     if (delta.state && (delta.state.current === 'complete' || delta.state.current === 'interrupted')) {
-                        URL.revokeObjectURL(blobUrl);
+                        if (blobUrl) {
+                            try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+                        }
                         browser.downloads.onChanged.removeListener(onChanged);
                     }
                 };
@@ -288,6 +333,10 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 sendResponse({ ok: true });
             } catch (err) {
+                // MIN-ROB-1 : Révoquer le Blob URL en cas d'échec immédiat
+                if (blobUrl) {
+                    try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+                }
                 sendResponse({ error: err.message });
             }
         })();
@@ -396,6 +445,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         title: browser.i18n.getMessage("extensionName"),
                         message: browser.i18n.getMessage("notifSuccessMsg").replace("{title}", cleanTitle).replace("{format}", browser.i18n.getMessage('selectionFallbackTitle'))
                     });
+
+                    // BLQ-ROB-1 : Résolution de la promesse popup
+                    sendResponse({ status: "success" });
                 } catch (err) {
                     console.error('[MC] Pipeline SELECTION:', sanitizeErrorMessage(err.message));
                     notifyUI("STATUS_UPDATE", {
@@ -403,6 +455,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         i18nKey: "errSelectionFailed",
                         code: "UNKNOWN"
                     });
+                    // BLQ-ROB-1 : Résolution d'erreur pour débloquer la promesse popup
+                    sendResponse(errorResponse("errSelectionFailed", "UNKNOWN", err.message));
                 } finally {
                     setCapturing(false);
                 }
@@ -414,28 +468,39 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 const format = message.format || "pdf";
                 const scripts = INJECTION_PIPELINE[format] ?? [];
 
+                // BLQ-ROB-2 : Résolution déterministe de l'onglet cible dès le début du traitement
+                const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                if (tabs.length === 0) {
+                    setCapturing(false);
+                    const errMsg = "Aucun onglet actif trouvé.";
+                    sendResponse(errorResponse("errWorkflowFailed", "UNKNOWN", errMsg));
+                    return;
+                }
+                const targetTab = tabs[0];
+
                 if (scripts.length > 0) {
-                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    if (tabs.length > 0) {
-                        try {
-                            await injectScriptsSequentially(tabs[0].id, scripts);
-                        } catch (err) {
-                            if (err instanceof InjectionError) {
-                                setCapturing(false);
-                                sendResponse({
-                                    status: "error",
-                                    code: "INJECTION_FAILED",
-                                    i18nKey: "errInjectionFailed"
-                                });
-                                return;
-                            }
+                    try {
+                        await injectScriptsSequentially(targetTab.id, scripts);
+                    } catch (err) {
+                        if (err instanceof InjectionError) {
                             setCapturing(false);
-                            throw err;
+                            sendResponse({
+                                status: "error",
+                                code: "INJECTION_FAILED",
+                                i18nKey: "errInjectionFailed"
+                            });
+                            return;
                         }
+                        setCapturing(false);
+                        throw err;
                     }
                 }
 
-                executeCaptureAndUploadWorkflow(message.notebookId, format, message.intentNote)
+                executeCaptureAndUploadWorkflow(message.notebookId, format, message.intentNote, targetTab)
+                    .then(() => {
+                        // BLQ-ROB-1 : Résolution systématique de la promesse popup
+                        sendResponse({ status: "success" });
+                    })
                     .catch(err => {
                         console.error('[MC] Pipeline WORKFLOW:', sanitizeErrorMessage(err.message));
                         notifyUI("STATUS_UPDATE", {
@@ -443,6 +508,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             i18nKey: "errWorkflowFailed",
                             code: "UNKNOWN"
                         });
+                        // BLQ-ROB-1 : Résolution d'erreur pour débloquer la promesse popup
+                        sendResponse(errorResponse("errWorkflowFailed", "UNKNOWN", err.message));
                     })
                     .finally(() => {
                         setCapturing(false);
@@ -451,6 +518,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 setCapturing(false);
                 console.error('[MC] START_CAPTURE IIFE:', sanitizeErrorMessage(err.message));
                 notifyUI("STATUS_UPDATE", { status: "error", i18nKey: "errWorkflowFailed", code: "UNKNOWN" });
+                // BLQ-ROB-1 : Résolution de secours
+                sendResponse(errorResponse("errWorkflowFailed", "UNKNOWN", err.message));
             });
         }
     }
@@ -495,12 +564,16 @@ browser.runtime.onConnect.addListener((port) => {
  * @param {string|null} intentNote       - Annotation d'intention optionnelle.
  * @param {number}      activeIndex      - Index du compte Google actif.
  * @param {string}      cookieString     - Cookie de session personnel.
+ * @param {Object|null} [targetTab=null] - Onglet cible déterministe (évite race conditions).
  * @returns {Promise<Object>} ctx - Contexte prêt à consommer par les handlers.
  */
-async function buildCaptureContext(targetNotebookId, intentNote, activeIndex, cookieString) {
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    if (tabs.length === 0) throw new Error("Aucun onglet actif trouvé.");
-    const activeTab = tabs[0];
+async function buildCaptureContext(targetNotebookId, intentNote, activeIndex, cookieString, targetTab = null) {
+    let activeTab = targetTab;
+    if (!activeTab) {
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tabs.length === 0) throw new Error("Aucun onglet actif trouvé.");
+        activeTab = tabs[0];
+    }
     const pageTitle = activeTab.title || "Capture";
     const pageUrl = activeTab.url;
     const cleanTitle = pageTitle.replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, ' ').trim().substring(0, 100);
@@ -772,15 +845,16 @@ async function handleContent(ctx, format) {
  * @param  {string}      targetNotebookId - ID du carnet cible, ou "CREATE_NEW".
  * @param  {string}      format           - Format d'import : "pdf" | "md" | "url" | "screenshot" | "direct" | "drive".
  * @param  {string|null} [intentNote]     - Annotation d'intention optionnelle (§8 AGENTS.md).
+ * @param  {Object|null} [targetTab]      - Onglet cible résolu (optionnel).
  * @returns {Promise<void>}
  * @throws  {Error} - Si l'onglet actif est absent, le carnet introuvable, ou l'upload échoue.
  */
-async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentNote = null) {
+async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentNote = null, targetTab = null) {
     notifyUI("STATUS_UPDATE", { i18nKey: "statusFetchSession", status: "info" });
     const cookieString = await getPersonalAuthCookies();
     const activeIndex = await getActiveAuthuser();
     await fetchCSRFToken(cookieString, activeIndex);
-    const ctx = await buildCaptureContext(targetNotebookId, intentNote, activeIndex, cookieString);
+    const ctx = await buildCaptureContext(targetNotebookId, intentNote, activeIndex, cookieString, targetTab);
 
     const PIPELINE = {
         screenshot: () => handleScreenshot(ctx),

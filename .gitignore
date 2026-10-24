@@ -21,6 +21,7 @@ API-REFERENCE.md
 spec.md
 plan.md
 tasks.md
+task.md
 submission_kit.md
 
 # Libs obsolètes
@@ -31,3 +32,6 @@ sign.sh
 web-ext-config.cjs
 web-ext-artifacts/
 tools/
+
+# Travaux de publication
+publication/

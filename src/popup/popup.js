@@ -303,11 +303,14 @@ function renderNotebooks(list) {
         setPlaceholder(uiNotebookList, t('notebookNotFound'));
         return;
     }
-    list.forEach(nb => {
+    const hasSelected = list.some(nb => nb.id === currentSelectedNotebookId);
+    list.forEach((nb, index) => {
+        const isSelected = (currentSelectedNotebookId === nb.id);
+        const isRovingActive = isSelected || (!hasSelected && index === 0);
         const div = document.createElement('div');
         div.className = 'notebook-item';
         div.setAttribute('role', 'option');
-        div.setAttribute('tabindex', '0');
+        div.setAttribute('tabindex', isRovingActive ? '0' : '-1');
         div.setAttribute('aria-selected', 'false');
         if (currentSelectedNotebookId === nb.id) {
            div.classList.add('selected');
@@ -318,9 +321,11 @@ function renderNotebooks(list) {
             document.querySelectorAll('.notebook-item').forEach(el => {
               el.classList.remove('selected');
               el.setAttribute('aria-selected', 'false');
+              el.setAttribute('tabindex', '-1');
             });
             div.classList.add('selected');
             div.setAttribute('aria-selected', 'true');
+            div.setAttribute('tabindex', '0');
             currentSelectedNotebookId = nb.id;
             btnCapture.disabled = false;
         };
@@ -331,10 +336,14 @@ function renderNotebooks(list) {
           }
           if (e.key === 'ArrowDown' && div.nextElementSibling) {
             e.preventDefault();
+            div.setAttribute('tabindex', '-1');
+            div.nextElementSibling.setAttribute('tabindex', '0');
             div.nextElementSibling.focus();
           }
           if (e.key === 'ArrowUp' && div.previousElementSibling) {
             e.preventDefault();
+            div.setAttribute('tabindex', '-1');
+            div.previousElementSibling.setAttribute('tabindex', '0');
             div.previousElementSibling.focus();
           }
         });
