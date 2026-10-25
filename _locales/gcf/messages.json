@@ -136,7 +136,7 @@
     "message": "Paré"
   },
   "btnClose": {
-    "message": "✖ Fèmé"
+    "message": "Fèmé"
   },
   "linkOpenNotebook": {
     "message": "Wouvè kayé-la →"
@@ -401,5 +401,107 @@
   "formatLabelDirect": {
     "message": "Enpòtasyon dirèk",
     "description": "Label for direct import format in status messages"
+  },
+  "btnSettingsTitle": {
+    "message": "Paramèt é mòd enpòtasyon"
+  },
+  "settingsTitle": {
+    "message": "Paramèt"
+  },
+  "btnSettingsBack": {
+    "message": "← Viré"
+  },
+  "settingsModesTitle": {
+    "message": "Mòd afiché (2 a 4)"
+  },
+  "settingsModesHint": {
+    "message": "Chwazi 2 a 4 mòd pou ba prensipal-la. Mòd URL-la obligatwa."
+  },
+  "settingsCreoleLabel": {
+    "message": "🇬🇵 Afiché èkstansyon-la an kréyòl (Kréyòl)"
+  },
+  "btnPdfRich": {
+    "message": "PDF+"
+  },
+  "btnPdfRichAriaLabel": {
+    "message": "Fòma PDF Rich èvè zimaj é kòd"
+  },
+  "btnPdfRichTitle": {
+    "message": "PDF konplé èvè zimaj, tablo é blòk kòd"
+  },
+  "btnPdfImages": {
+    "message": "PDF Img"
+  },
+  "btnPdfImagesAriaLabel": {
+    "message": "Fòma PDF Zimaj tout paj-la"
+  },
+  "btnPdfImagesTitle": {
+    "message": "Kaptir vizyèl a tout paj-la an paj PDF"
+  },
+  "btnMdRich": {
+    "message": "MD+"
+  },
+  "btnMdRichAriaLabel": {
+    "message": "Fòma Markdown Rich èvè lyen é zimaj"
+  },
+  "btnMdRichTitle": {
+    "message": "Markdown anrichi (gra, italik, lyen, zimaj é tablo)"
+  },
+  "btnScreenshotFull": {
+    "message": "Paj"
+  },
+  "btnScreenshotFullAriaLabel": {
+    "message": "Kaptir PNG a tout paj-la"
+  },
+  "btnScreenshotFullTitle": {
+    "message": "Kaptiré tout paj-la an PNG"
+  },
+  "modePdfName": {
+    "message": "PDF (Senp)"
+  },
+  "modePdfDesc": {
+    "message": "Tèks é tablo striktiré, san zimaj"
+  },
+  "modePdfRichName": {
+    "message": "PDF Rich (PDF+)"
+  },
+  "modePdfRichDesc": {
+    "message": "Zimaj andidan, tablo, sitasyon é blòk kòd"
+  },
+  "modePdfImagesName": {
+    "message": "PDF Zimaj (Tout paj-la)"
+  },
+  "modePdfImagesDesc": {
+    "message": "Kaptir vizyèl a paj-la dékoupé an paj PDF"
+  },
+  "modeMdName": {
+    "message": "Markdown (Senp)"
+  },
+  "modeMdDesc": {
+    "message": "Tèks é tablo léjé toubòlman"
+  },
+  "modeMdRichName": {
+    "message": "Markdown Rich (MD+)"
+  },
+  "modeMdRichDesc": {
+    "message": "Gra, italik, lyen, zimaj é tablo"
+  },
+  "modeUrlName": {
+    "message": "URL / YouTube / Drive"
+  },
+  "modeUrlDesc": {
+    "message": "Enpòtasyon dirèk pa lyen, YouTube oben Google Drive (obligatwa)"
+  },
+  "modeScreenshotName": {
+    "message": "Kaptir ékran vizib"
+  },
+  "modeScreenshotDesc": {
+    "message": "Ka kaptiré sèlman sa ou ka vwè an PNG"
+  },
+  "modeScreenshotFullName": {
+    "message": "Kaptir tout paj-la"
+  },
+  "modeScreenshotFullDesc": {
+    "message": "Ka kaptiré tout paj-la an PNG"
   }
 }

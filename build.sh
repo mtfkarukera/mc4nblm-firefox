@@ -8,6 +8,9 @@ DIST="dist"
 
 echo "🔨 Building ${NAME}-${VERSION}.xpi …"
 
+# Garde-fou statique : contrat RPC/Scotty, moteurs PDF/MD et absence de DEBUG = true
+node tools/check-rpc-contract.js
+
 # Build via web-ext (lit web-ext-config.cjs → artifactsDir: dist)
 npx web-ext build --source-dir . --overwrite-dest
 

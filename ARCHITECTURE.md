@@ -2,7 +2,7 @@
 
 > **Extension Firefox (Manifest V3)**  
 > **Auteur & Conception** : MTF Karukera  
-> **Version de référence** : v6.2.6 (Octobre 2026)
+> **Version de référence** : v6.3.0 (Octobre 2026)
 
 ---
 
@@ -115,11 +115,12 @@ Afin d'optimiser l'empreinte mémoire et respecter les directives de performance
 
 ## 4. Internationalisation (i18n)
 
-L'extension supporte 6 langues :
+L'extension supporte 7 langues :
 - 🇬🇧 Anglais (`en` — locale par défaut)
 - 🇫🇷 Français (`fr`)
 - 🇩🇪 Allemand (`de`)
 - 🇪🇸 Espagnol (`es`)
+- 🇵🇹 Portugais (`pt`)
 - 🇻🇳 Vietnamien (`vi`)
 - 🇬🇵 Créole guadeloupéen (`gcf` — locale hybride avec moteur de chargement custom dans `utils.js`)
 

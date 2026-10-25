@@ -119,11 +119,14 @@ window.ClipperPDFGenerator = {
    * Génère un PDF à partir du container HTML du Serializer V9.
    *
    * @param {HTMLElement} container - Container avec CSS Reader Mode + data URI images.
+   * @param {string|null} [intentNote=null] - Note d'intention optionnelle.
+   * @param {Object}      [i18nLabels={}] - Libellés localisés.
+   * @param {Object}      [options={}] - Options de génération ({ rich: false }).
    * @returns {Promise<string>} PDF en Base64 Data URI.
    */
-  async generate(container, intentNote = null, i18nLabels = {}) {
+  async generate(container, intentNote = null, i18nLabels = {}, options = {}) {
     // Extraire les blocs du container HTML
-    const blocks = this._extractBlocks(container);
+    const blocks = this._extractBlocks(container, options);
 
     // Initialiser jsPDF
     const jsPDFCtor = (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF :
@@ -301,6 +304,55 @@ window.ClipperPDFGenerator = {
           addRule();
           break;
 
+        case 'code': {
+          if (!block.text) break;
+          const codeSize = 8.5;
+          const codeLh = 4;
+          const pad = 2.5;
+          doc.setFontSize(codeSize);
+          doc.setFont('courier', 'normal');
+          const rawLines = block.text.split('\n');
+          const wrapped = [];
+          for (const rl of rawLines) {
+            const split = doc.splitTextToSize(rl || ' ', uw - pad * 2);
+            wrapped.push(...split);
+          }
+          for (const line of wrapped) {
+            space(codeLh + 1);
+            doc.setFillColor(245, 245, 245);
+            doc.rect(m, y - codeLh * 0.75, uw, codeLh + 0.8, 'F');
+            doc.setTextColor(35, 35, 35);
+            doc.text(line, m + pad, y);
+            y += codeLh;
+          }
+          doc.setFont('helvetica', 'normal');
+          y += 2;
+          break;
+        }
+
+        case 'blockquote': {
+          if (!block.text) break;
+          const bqSize = 10;
+          const bqLh = bqSize * 0.4;
+          const bqIndent = 5;
+          doc.setFontSize(bqSize);
+          doc.setFont('helvetica', 'italic');
+          doc.setTextColor(85, 85, 85);
+          const bqLines = doc.splitTextToSize(block.text, uw - bqIndent);
+          for (const line of bqLines) {
+            space(bqLh);
+            doc.setDrawColor(180, 180, 180);
+            doc.setLineWidth(0.6);
+            doc.line(m + 1, y - bqLh * 0.75, m + 1, y + 1);
+            doc.text(line, m + bqIndent, y);
+            y += bqLh;
+          }
+          doc.setLineWidth(0.2);
+          doc.setFont('helvetica', 'normal');
+          y += 2;
+          break;
+        }
+
         case 'p': default:
           if (block.text) addText(block.text, 10, false, 2, [50, 50, 50]);
           break;
@@ -309,6 +361,106 @@ window.ClipperPDFGenerator = {
 
     const result = doc.output('datauristring');
     return result;
+  },
+
+  /**
+   * Génère un PDF visuel multi-pages A4 à partir de tranches d'images PNG pleine page.
+   * Injecte l'en-tête d'intention et le bloc de grounding IA en haut de la première page.
+   *
+   * @param {Array<{dataUrl: string, width: number, height: number}>} slices - Tranches PNG ordonnées.
+   * @param {Object} metadata - Métadonnées de la page ({ title, url, siteName }).
+   * @param {string|null} [intentNote=null] - Note d'intention optionnelle.
+   * @param {Object} [i18nLabels={}] - Libellés localisés.
+   * @returns {string} PDF en Base64 Data URI.
+   */
+  generateFromImageSlices(slices, metadata = {}, intentNote = null, i18nLabels = {}) {
+    const jsPDFCtor = (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF :
+                      (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null;
+    if (!jsPDFCtor) {
+      throw new Error("jsPDF non chargé.");
+    }
+
+    const doc = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    const m = 12;
+    const uw = pw - m * 2;
+    let y = m;
+
+    // 1. Injection de la note d'intention si présente
+    if (intentNote) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(50, 50, 50);
+      doc.text(`[${i18nLabels.intentHeader || 'INTENTION DE RECHERCHE'}]`, m, y);
+      y += 5;
+      doc.setFont('helvetica', 'italic');
+      const intentLines = doc.splitTextToSize(intentNote, uw);
+      intentLines.forEach(line => {
+        doc.text(line, m, y);
+        y += 4.5;
+      });
+      doc.setDrawColor(200, 200, 200);
+      doc.line(m, y, pw - m, y);
+      y += 6;
+    }
+
+    // 2. En-tête de Grounding IA compact
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(40, 40, 40);
+    const titleLines = doc.splitTextToSize(metadata.title || i18nLabels.untitledDocument || 'Document', uw);
+    titleLines.forEach(line => {
+      doc.text(line, m, y);
+      y += 4.5;
+    });
+
+    if (metadata.url) {
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(26, 115, 232);
+      doc.textWithLink(metadata.url, m, y, { url: metadata.url });
+      y += 5;
+    }
+
+    doc.setDrawColor(180, 180, 180);
+    doc.line(m, y, pw - m, y);
+    y += 4;
+
+    // 3. Placement des tranches PNG sur les pages A4
+    for (let i = 0; i < slices.length; i++) {
+      const slice = slices[i];
+      if (!slice || !slice.dataUrl) continue;
+
+      const availH = ph - y - m;
+      const ratio = slice.height / Math.max(slice.width, 1);
+      let drawW = uw;
+      let drawH = drawW * ratio;
+
+      if (drawH > availH) {
+        if (i > 0 && y > m + 5) {
+          doc.addPage();
+          y = m;
+        }
+        const maxPageH = ph - y - m;
+        if (drawH > maxPageH) {
+          const scaleFactor = maxPageH / drawH;
+          drawH = maxPageH;
+          drawW = drawW * scaleFactor;
+        }
+      }
+
+      const xOff = m + (uw - drawW) / 2;
+      doc.addImage(slice.dataUrl, 'PNG', xOff, y, drawW, drawH);
+      y += drawH + 2;
+
+      if (i < slices.length - 1) {
+        doc.addPage();
+        y = m;
+      }
+    }
+
+    return doc.output('datauristring');
   },
 
   // =================================================================
@@ -408,7 +560,8 @@ window.ClipperPDFGenerator = {
   // =================================================================
   // _extractBlocks : Parcourt le container HTML du serializer V9
   // =================================================================
-  _extractBlocks(container) {
+  _extractBlocks(container, options = {}) {
+    const isRich = options.rich === true;
     const blocks = [];
 
     const walk = (node) => {
@@ -487,6 +640,19 @@ window.ClipperPDFGenerator = {
           const text = node.textContent.trim();
           if (text) blocks.push({ type: 'li', text });
         }
+        return;
+      }
+
+      // Blocs de code et citations en mode PDF Riche
+      if (isRich && tag === 'pre') {
+        const codeNode = node.querySelector('code') || node;
+        const text = codeNode.textContent.trim();
+        if (text) blocks.push({ type: 'code', text });
+        return;
+      }
+      if (isRich && tag === 'blockquote') {
+        const text = node.textContent.trim();
+        if (text) blocks.push({ type: 'blockquote', text });
         return;
       }
 

@@ -595,9 +595,13 @@ async function buildCaptureContext(targetNotebookId, intentNote, activeIndex, co
 function notifySuccess(cleanTitle, format) {
     const formatLabels = {
         pdf: "PDF",
+        pdf_rich: "PDF+",
+        pdf_images: "PDF Images",
         md: "Markdown",
+        md_rich: "Markdown+",
         url: "URL",
         screenshot: "Screenshot",
+        screenshot_full: "Screenshot Page",
         direct: browser.i18n.getMessage('formatLabelDirect')
     };
     browser.notifications.create({
@@ -613,7 +617,51 @@ function notifySuccess(cleanTitle, format) {
 // ─── Handlers individuels ────────────────────────────────────────────────────
 
 /**
- * Handler format "screenshot" : capture PNG de l'onglet actif et upload.
+ * Mesure les dimensions complètes du document dans l'onglet cible et force
+ * le chargement eager des images lazy avant une capture plein écran.
+ *
+ * @param {number} tabId - ID de l'onglet actif.
+ * @returns {Promise<{width: number, height: number, dpr: number}>}
+ */
+async function measurePageDimensions(tabId) {
+    try {
+        const [{ result }] = await browser.scripting.executeScript({
+            target: { tabId },
+            func: () => {
+                document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+                    img.loading = 'eager';
+                });
+                const docEl = document.documentElement;
+                const body = document.body;
+                const width = Math.max(
+                    docEl ? docEl.clientWidth : 0,
+                    window.innerWidth || 1280
+                );
+                const height = Math.max(
+                    body ? body.scrollHeight : 0,
+                    docEl ? docEl.scrollHeight : 0,
+                    body ? body.offsetHeight : 0,
+                    docEl ? docEl.offsetHeight : 0,
+                    window.innerHeight || 800
+                );
+                return {
+                    width: Math.round(width),
+                    height: Math.round(height),
+                    dpr: window.devicePixelRatio || 1
+                };
+            }
+        });
+        if (result && result.width > 0 && result.height > 0) {
+            return result;
+        }
+    } catch {
+        // Fallback sécurisé si executeScript n'est pas autorisé sur la page
+    }
+    return { width: 1280, height: 900, dpr: 1 };
+}
+
+/**
+ * Handler format "screenshot" : capture PNG de l'onglet actif (zone visible) et upload.
  * @param {Object} ctx - Contexte buildCaptureContext().
  */
 async function handleScreenshot(ctx) {
@@ -638,6 +686,151 @@ async function handleScreenshot(ctx) {
         showDownload: false
     });
     notifySuccess(cleanTitle, "screenshot");
+}
+
+/**
+ * Handler format "screenshot_full" : capture PNG de la page entière via l'option
+ * native Firefox `rect` + `scale` (avec plafonnement de sécurité WebRender à 16 380 px
+ * et repli automatique sur le viewport visible).
+ * @param {Object} ctx - Contexte buildCaptureContext().
+ */
+async function handleScreenshotFull(ctx) {
+    const { finalNotebookId, cleanTitle, activeIndex, activeTab } = ctx;
+    notifyUI("STATUS_UPDATE", { i18nKey: "statusScreenshot", status: "info" });
+
+    const { width, height, dpr } = await measurePageDimensions(activeTab.id);
+    const safeWidth = Math.min(Math.max(width, 320), 8190);
+    const safeHeight = Math.min(Math.max(height, 200), 20000);
+    const safeScale = Number(
+        Math.max(0.5, Math.min(dpr, 2, 16380 / safeWidth, 16380 / safeHeight)).toFixed(2)
+    );
+
+    let dataUrl;
+    try {
+        dataUrl = await browser.tabs.captureVisibleTab(activeTab?.windowId ?? null, {
+            format: 'png',
+            rect: { x: 0, y: 0, width: safeWidth, height: safeHeight },
+            scale: safeScale
+        });
+    } catch {
+        // Fallback transparent sur la capture du viewport si rect échoue
+        dataUrl = await browser.tabs.captureVisibleTab(activeTab?.windowId ?? null, { format: 'png' });
+    }
+
+    const resp = await fetch(dataUrl);
+    const rawBlob = await resp.blob();
+    const pngBlob = rawBlob.type === 'image/png' ? rawBlob : new Blob([rawBlob], { type: 'image/png' });
+    const screenshotFilename = `${cleanTitle}.png`;
+
+    notifyUI("STATUS_UPDATE", { i18nKey: "statusUploadScreenshot", status: "info" });
+    await uploadFileBlob(finalNotebookId, pngBlob, screenshotFilename, activeIndex);
+
+    const notebookUrl = buildNotebookUrl(finalNotebookId);
+    notifyUI("STATUS_UPDATE", {
+        i18nKey: "statusImportedScreenshot",
+        status: "success",
+        linkUrl: notebookUrl,
+        showDownload: false
+    });
+    notifySuccess(cleanTitle, "screenshot_full");
+}
+
+/**
+ * Handler format "pdf_images" : capture la page complète en tranches verticales PNG
+ * aux proportions A4, les assemble dans un document PDF multi-pages via jsPDF
+ * (avec en-tête de Grounding IA et Intent Note), puis l'uploade comme source PDF.
+ * Ce mode préserve le rendu visuel exact de la page tout en contournant le filtre
+ * Vision Safety appliqué par Google aux images autonomes.
+ *
+ * @param {Object} ctx - Contexte buildCaptureContext().
+ */
+async function handlePdfImages(ctx) {
+    const { finalNotebookId, cleanTitle, pageTitle, pageUrl, activeTab, intentNote, activeIndex } = ctx;
+    notifyUI("STATUS_UPDATE", { i18nKey: "statusScreenshot", status: "info" });
+
+    const { width, height, dpr } = await measurePageDimensions(activeTab.id);
+    const safeWidth = Math.min(Math.max(width, 320), 4096);
+    const maxTotalHeight = Math.min(Math.max(height, 200), 25000);
+    // Hauteur d'une tranche ~ ratio A4 portrait (1.38x la largeur)
+    const sliceHeight = Math.max(400, Math.round(safeWidth * 1.38));
+    const safeSliceScale = Number(
+        Math.max(0.75, Math.min(dpr, 1.5, 8190 / safeWidth, 8190 / sliceHeight)).toFixed(2)
+    );
+
+    const slices = [];
+    const maxSlices = 15;
+
+    for (let offsetY = 0; offsetY < maxTotalHeight && slices.length < maxSlices; offsetY += sliceHeight) {
+        const currentSliceH = Math.min(sliceHeight, maxTotalHeight - offsetY);
+        if (currentSliceH < 20) break;
+
+        try {
+            const sliceDataUrl = await browser.tabs.captureVisibleTab(activeTab?.windowId ?? null, {
+                format: 'png',
+                rect: { x: 0, y: offsetY, width: safeWidth, height: currentSliceH },
+                scale: safeSliceScale
+            });
+            slices.push({
+                dataUrl: sliceDataUrl,
+                width: safeWidth,
+                height: currentSliceH
+            });
+        } catch {
+            if (slices.length === 0) {
+                const fallbackUrl = await browser.tabs.captureVisibleTab(activeTab?.windowId ?? null, { format: 'png' });
+                slices.push({
+                    dataUrl: fallbackUrl,
+                    width: safeWidth,
+                    height: Math.min(sliceHeight, 900)
+                });
+            }
+            break;
+        }
+    }
+
+    notifyUI("STATUS_UPDATE", { i18nKey: "statusDomCapture", status: "info" });
+
+    const response = await browser.tabs.sendMessage(activeTab.id, {
+        action: "GENERATE_PDF_IMAGES",
+        slices,
+        metadata: {
+            title: pageTitle,
+            url: pageUrl
+        },
+        intentNote: intentNote ?? null,
+        i18nLabels: {
+            untitledDocument: browser.i18n.getMessage('metaUntitledDocument'),
+            captureHeader:    browser.i18n.getMessage('metaCaptureHeader'),
+            authorPrefix:     browser.i18n.getMessage('metaAuthorPrefix'),
+            sitePrefix:       browser.i18n.getMessage('metaSitePrefix'),
+            datePrefix:       browser.i18n.getMessage('metaDatePrefix'),
+            intentHeader:     browser.i18n.getMessage('intentHeader')
+        }
+    });
+
+    if (response?.status !== "SUCCESS") {
+        throw new Error("Erreur génération PDF Images : " + (response?.error || "inconnue"));
+    }
+
+    const base64Pdf = response.payload;
+    await saveCapture(base64Pdf, cleanTitle, "pdf");
+
+    notifyUI("STATUS_UPDATE", { i18nKey: "statusCheckQuota", status: "info" });
+    if (base64Pdf.length > MAX_BASE64_SIZE_BYTES) {
+        throw new Error("Upload refusé : Le fichier PDF dépasse la limite de 200 MB.");
+    }
+
+    notifyUI("STATUS_UPDATE", { i18nKey: "statusSendPdf", status: "info" });
+    await uploadPersonalSource(finalNotebookId, base64Pdf, cleanTitle, activeIndex);
+
+    const notebookUrl = buildNotebookUrl(finalNotebookId);
+    notifyUI("STATUS_UPDATE", {
+        i18nKey: "statusImportedPdf",
+        status: "success",
+        linkUrl: notebookUrl,
+        showDownload: true
+    });
+    notifySuccess(cleanTitle, "pdf_images");
 }
 
 /**
@@ -798,10 +991,11 @@ async function handleContent(ctx, format) {
 
     const capturedData = response.payload;
     const capturedFormat = response.format || format;
+    const isMarkdown = capturedFormat === "md" || capturedFormat === "md_rich";
 
-    await saveCapture(capturedData, cleanTitle, capturedFormat);
+    await saveCapture(capturedData, cleanTitle, isMarkdown ? "md" : "pdf");
 
-    if (capturedFormat === "md") {
+    if (isMarkdown) {
         notifyUI("STATUS_UPDATE", { i18nKey: "statusSendMarkdown", status: "info" });
         await addTextSource(finalNotebookId, cleanTitle, capturedData, activeIndex);
 
@@ -812,7 +1006,7 @@ async function handleContent(ctx, format) {
             linkUrl: notebookUrl,
             showDownload: true
         });
-        notifySuccess(cleanTitle, "md");
+        notifySuccess(cleanTitle, capturedFormat);
 
     } else {
         notifyUI("STATUS_UPDATE", { i18nKey: "statusCheckQuota", status: "info" });
@@ -831,7 +1025,7 @@ async function handleContent(ctx, format) {
             linkUrl: notebookUrl,
             showDownload: true
         });
-        notifySuccess(cleanTitle, "pdf");
+        notifySuccess(cleanTitle, capturedFormat);
     }
 }
 
@@ -839,12 +1033,13 @@ async function handleContent(ctx, format) {
 
 /**
  * Orchestre le workflow complet de capture et d'upload pour les formats
- * PDF, Markdown, URL, Screenshot, Import Direct et Google Drive.
+ * PDF, PDF Riche, PDF Images, Markdown, Markdown Riche, URL, Screenshot,
+ * Screenshot Page entière, Import Direct et Google Drive.
  * Gère la création à la volée d'un carnet si notebookId === "CREATE_NEW".
  * Émet des STATUS_UPDATE vers la popup à chaque étape du pipeline.
  *
  * @param  {string}      targetNotebookId - ID du carnet cible, ou "CREATE_NEW".
- * @param  {string}      format           - Format d'import : "pdf" | "md" | "url" | "screenshot" | "direct" | "drive".
+ * @param  {string}      format           - Format d'import.
  * @param  {string|null} [intentNote]     - Annotation d'intention optionnelle (§8 AGENTS.md).
  * @param  {Object|null} [targetTab]      - Onglet cible résolu (optionnel).
  * @returns {Promise<void>}
@@ -858,14 +1053,16 @@ async function executeCaptureAndUploadWorkflow(targetNotebookId, format, intentN
     const ctx = await buildCaptureContext(targetNotebookId, intentNote, activeIndex, cookieString, targetTab);
 
     const PIPELINE = {
-        screenshot: () => handleScreenshot(ctx),
-        direct:     () => handleDirect(ctx),
-        drive:      () => handleDrive(ctx),
-        url:        () => handleUrl(ctx),
+        screenshot:      () => handleScreenshot(ctx),
+        screenshot_full: () => handleScreenshotFull(ctx),
+        pdf_images:      () => handlePdfImages(ctx),
+        direct:          () => handleDirect(ctx),
+        drive:           () => handleDrive(ctx),
+        url:             () => handleUrl(ctx),
     };
     if (PIPELINE[format]) {
         await PIPELINE[format]();
     } else {
-        await handleContent(ctx, format); // pdf ou md
+        await handleContent(ctx, format); // pdf, pdf_rich, md, md_rich
     }
 }

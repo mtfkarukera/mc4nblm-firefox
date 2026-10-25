@@ -12,85 +12,150 @@
     <div class="logo">
       <div class="logo-icon" aria-hidden="true"></div>
     </div>
-    <div class="header-right" style="display: flex; align-items: center; gap: 8px;">
-      <select id="locale-selector" class="locale-selector" title="Langue" data-i18n-title="popupLabelLocale" data-i18n-aria-label="popupLabelLocale">
-        <option value="auto">Auto</option>
-        <option value="gcf">Kréyòl</option>
-      </select>
+    <div class="header-right" style="display: flex; align-items: center; gap: 6px;">
       <select id="account-switcher" class="hidden" title="Changer de compte Google" data-i18n-title="popupTitleAccountSwitcher" data-i18n-aria-label="popupTitleAccountSwitcher"></select>
       <div id="auth-status" class="status-badge status-loading" role="status" aria-live="polite" data-i18n="statusConnecting">Connexion...</div>
+      <button id="btn-settings" class="settings-btn" type="button" title="Paramètres" data-i18n-title="btnSettingsTitle" data-i18n-aria-label="btnSettingsTitle">
+        <span class="ui-icon icon-settings" aria-hidden="true"></span>
+      </button>
     </div>
   </header>
 
-  <!-- RECHERCHE & SELECTION CARNET -->
-  <section class="research-section">
-    <label for="notebook-search" data-i18n="popupLabelSelectNotebook">Vos Carnets</label>
-    <div class="input-group">
-      <input type="text" id="notebook-search" placeholder="Rechercher un carnet (Fast Research)..." disabled data-i18n-placeholder="popupPlaceholderSearchNotebook" />
-      <button id="btn-create-notebook" title="Créer un nouveau carnet" data-i18n-title="btnCreateNotebookTitle" data-i18n-aria-label="btnCreateNotebookTitle">+</button>
+  <!-- PANNEAU PARAMÈTRES (Masqué par défaut) -->
+  <section id="settings-panel" class="settings-panel hidden" aria-labelledby="settings-title">
+    <div class="settings-header">
+      <span id="settings-title" class="settings-title">
+        <span class="ui-icon icon-settings" aria-hidden="true"></span>
+        <span data-i18n="settingsTitle">Paramètres</span>
+      </span>
+      <button id="btn-settings-back" class="settings-back-btn" type="button" data-i18n="btnSettingsBack">← Retour</button>
     </div>
-    
-    <!-- Liste des carnets filtrés -->
-    <div id="notebook-list" class="notebook-list" role="listbox" aria-label="Notebooks" data-i18n-aria-label="popupLabelSelectNotebook">
-        <div class="placeholder-text" data-i18n="loadingNotebooks">Veuillez patienter...</div>
+
+    <div class="settings-block">
+      <div class="settings-block-header">
+        <span class="settings-block-title" data-i18n="settingsModesTitle">Modes affichés</span>
+        <span id="settings-modes-counter" class="settings-counter">4 / 4</span>
+      </div>
+      <p class="settings-hint" data-i18n="settingsModesHint">Choisis de 2 à 4 modes à afficher sur la barre principale (URL obligatoire).</p>
+      <div id="settings-modes-list" class="settings-modes-list" role="group" aria-labelledby="settings-title"></div>
+    </div>
+
+    <div class="settings-block settings-lang-block">
+      <label class="settings-lang-row" for="toggle-creole">
+        <span class="settings-lang-label" data-i18n="settingsCreoleLabel">🇬🇵 Afficher l'extension en créole (Kréyòl)</span>
+        <input type="checkbox" id="toggle-creole" class="settings-checkbox" />
+      </label>
     </div>
   </section>
 
-  <!-- FORMAT TOGGLE -->
-  <section class="format-section">
-    <label id="format-label" data-i18n="popupLabelFormat">Format d'import</label>
-    <div class="format-toggle" id="format-toggle" role="toolbar" aria-labelledby="format-label">
-      <button class="format-btn active" aria-pressed="true" data-format="pdf" title="Images intégrées, mise en page visuelle" data-i18n="btnPdf" data-i18n-aria-label="btnPdfAriaLabel" data-i18n-title="btnPdfTitle">📄 PDF</button>
-      <button class="format-btn" aria-pressed="false" data-format="md" title="Tables parfaites, ultra-léger, natif Gemini" data-i18n="btnMarkdown" data-i18n-aria-label="btnMarkdownAriaLabel" data-i18n-title="btnMarkdownTitle">📝 Markdown</button>
-      <button class="format-btn" aria-pressed="false" data-format="url" title="Import instantané — Gemini Notebook scrape la page" data-i18n="btnUrl" data-i18n-aria-label="btnUrlAriaLabel" data-i18n-title="btnUrlTitle">🔗 URL</button>
-      <button class="format-btn" aria-pressed="false" data-format="screenshot" title="Capture le viewport visible en PNG" data-i18n="btnScreenshot" data-i18n-aria-label="btnScreenshotAriaLabel" data-i18n-title="btnScreenshotTitle">📸</button>
-      <button class="format-btn" aria-pressed="false" data-format="drive" id="btn-drive-import" style="display: none;" title="Synchronisation native Google Drive" data-i18n="btnDrive" data-i18n-aria-label="btnDriveAriaLabel" data-i18n-title="btnDriveTitle">☁️ Drive</button>
-    </div>
-    <!-- Bouton Import Direct : masqué par défaut, affiché dynamiquement -->
-    <div id="direct-import-section" class="direct-import-section hidden">
-      <button class="format-btn format-btn-direct" aria-pressed="false" data-format="direct" id="btn-direct-import" title="Importer le fichier original tel quel" data-i18n-aria-label="btnDirectAriaLabel" data-i18n-title="btnDirectTitle">
-        ⚡ <span id="direct-label" data-i18n="btnDirect">Import direct</span>
+  <!-- VUE PRINCIPALE -->
+  <div id="main-view" class="main-view">
+    <!-- RECHERCHE & SELECTION CARNET -->
+    <section class="research-section">
+      <label for="notebook-search" data-i18n="popupLabelSelectNotebook">Vos Carnets</label>
+      <div class="input-group">
+        <input type="text" id="notebook-search" placeholder="Rechercher un carnet (Fast Research)..." disabled data-i18n-placeholder="popupPlaceholderSearchNotebook" />
+        <button id="btn-create-notebook" title="Créer un nouveau carnet" data-i18n-title="btnCreateNotebookTitle" data-i18n-aria-label="btnCreateNotebookTitle">+</button>
+      </div>
+      
+      <!-- Liste des carnets filtrés -->
+      <div id="notebook-list" class="notebook-list" role="listbox" aria-label="Notebooks" data-i18n-aria-label="popupLabelSelectNotebook">
+          <div class="placeholder-text" data-i18n="loadingNotebooks">Veuillez patienter...</div>
+      </div>
+    </section>
+
+    <!-- FORMAT TOGGLE -->
+    <section class="format-section">
+      <label id="format-label" data-i18n="popupLabelFormat">Format d'import</label>
+      <div class="format-toggle" id="format-toggle" role="toolbar" aria-labelledby="format-label">
+        <button class="format-btn" aria-pressed="false" data-format="pdf" title="Texte et tableaux structurés (sans images)" data-i18n-aria-label="btnPdfAriaLabel" data-i18n-title="btnPdfTitle">
+          <span class="ui-icon icon-pdf" aria-hidden="true"></span>
+          <span data-i18n="btnPdf">PDF</span>
+        </button>
+        <button class="format-btn active" aria-pressed="true" data-format="pdf_rich" title="PDF complet avec images intégrées, tableaux et blocs de code" data-i18n-aria-label="btnPdfRichAriaLabel" data-i18n-title="btnPdfRichTitle">
+          <span class="ui-icon icon-pdf-rich" aria-hidden="true"></span>
+          <span data-i18n="btnPdfRich">PDF+</span>
+        </button>
+        <button class="format-btn" aria-pressed="false" data-format="pdf_images" title="Capture visuelle de la page entière découpée en pages PDF" data-i18n-aria-label="btnPdfImagesAriaLabel" data-i18n-title="btnPdfImagesTitle">
+          <span class="ui-icon icon-pdf-images" aria-hidden="true"></span>
+          <span data-i18n="btnPdfImages">PDF Img</span>
+        </button>
+        <button class="format-btn" aria-pressed="false" data-format="md" title="Tables parfaites, ultra-léger, natif Gemini" data-i18n-aria-label="btnMarkdownAriaLabel" data-i18n-title="btnMarkdownTitle">
+          <span class="ui-icon icon-md" aria-hidden="true"></span>
+          <span data-i18n="btnMarkdown">MD</span>
+        </button>
+        <button class="format-btn" aria-pressed="false" data-format="md_rich" title="Markdown enrichi (gras, italique, liens, images et tableaux)" data-i18n-aria-label="btnMdRichAriaLabel" data-i18n-title="btnMdRichTitle">
+          <span class="ui-icon icon-md-rich" aria-hidden="true"></span>
+          <span data-i18n="btnMdRich">MD+</span>
+        </button>
+        <button class="format-btn" aria-pressed="false" data-format="url" title="Import instantané — Gemini Notebook scrape la page" data-i18n-aria-label="btnUrlAriaLabel" data-i18n-title="btnUrlTitle">
+          <span class="ui-icon icon-url" aria-hidden="true"></span>
+          <span data-i18n="btnUrl">URL</span>
+        </button>
+        <button class="format-btn" aria-pressed="false" data-format="screenshot" title="Capture la zone visible de l'écran en PNG" data-i18n-aria-label="btnScreenshotAriaLabel" data-i18n-title="btnScreenshotTitle">
+          <span class="ui-icon icon-screenshot" aria-hidden="true"></span>
+        </button>
+        <button class="format-btn" aria-pressed="false" data-format="screenshot_full" title="Capture la page entière en PNG" data-i18n-aria-label="btnScreenshotFullAriaLabel" data-i18n-title="btnScreenshotFullTitle">
+          <span class="ui-icon icon-screenshot-full" aria-hidden="true"></span>
+          <span data-i18n="btnScreenshotFull">Page</span>
+        </button>
+        <button class="format-btn" aria-pressed="false" data-format="drive" id="btn-drive-import" style="display: none;" title="Synchronisation native Google Drive" data-i18n-aria-label="btnDriveAriaLabel" data-i18n-title="btnDriveTitle">
+          <span class="ui-icon icon-drive" aria-hidden="true"></span>
+          <span data-i18n="btnDrive">Drive</span>
+        </button>
+      </div>
+      <!-- Bouton Import Direct : masqué par défaut, affiché dynamiquement -->
+      <div id="direct-import-section" class="direct-import-section hidden">
+        <button class="format-btn format-btn-direct" aria-pressed="false" data-format="direct" id="btn-direct-import" title="Importer le fichier original tel quel" data-i18n-aria-label="btnDirectAriaLabel" data-i18n-title="btnDirectTitle">
+          <span class="ui-icon icon-direct" aria-hidden="true"></span>
+          <span id="direct-label" data-i18n="btnDirect">Import direct</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- BANDEAU SÉLECTION (affiché quand une sélection est en attente) -->
+    <section id="selection-banner" class="selection-banner hidden">
+      <div class="selection-info">
+        <span class="ui-icon icon-selection selection-icon" aria-hidden="true"></span>
+        <span id="selection-text-preview" data-i18n="notifSelectionCaptured">Sélection capturée</span>
+      </div>
+      <button id="btn-clear-selection" class="selection-clear" title="Annuler" data-i18n-title="btnClearSelectionTitle" aria-label="Clear selection" data-i18n-aria-label="btnClearSelectionTitle">
+        <span class="ui-icon icon-close" aria-hidden="true"></span>
       </button>
-    </div>
-  </section>
+    </section>
 
-  <!-- BANDEAU SÉLECTION (affiché quand une sélection est en attente) -->
-  <section id="selection-banner" class="selection-banner hidden">
-    <div class="selection-info">
-      <span class="selection-icon">📋</span>
-      <span id="selection-text-preview" data-i18n="notifSelectionCaptured">Sélection capturée</span>
-    </div>
-    <button id="btn-clear-selection" class="selection-clear" title="Annuler" data-i18n-title="btnClearSelectionTitle" aria-label="Clear selection" data-i18n-aria-label="btnClearSelectionTitle">✕</button>
-  </section>
+    <!-- ACTION PRINCIPALE -->
+    <section class="action-section">
+      <div id="intent-wrapper" class="intent-wrapper">
+        <textarea
+          id="intent-input"
+          class="intent-input"
+          rows="2"
+          maxlength="300"
+          placeholder="Note pour l'IA (optionnel) — ex : Comparer avec le rapport 2024"
+          aria-label="Note d'intention pour Gemini Notebook"
+          data-i18n-placeholder="intentNotePlaceholder"
+          data-i18n-aria-label="intentNoteLabelVisible"
+        ></textarea>
+        <span id="intent-counter" class="intent-counter">0 / 300</span>
+      </div>
+      <button id="btn-capture" class="btn primary-btn" disabled>
+        <span class="btn-text" data-i18n="popupTitleCapture">Capturer la page</span>
+        <span id="btn-spinner" class="spinner hidden"></span>
+      </button>
+    </section>
 
-  <!-- ACTION PRINCIPALE -->
-  <section class="action-section">
-    <div id="intent-wrapper" class="intent-wrapper">
-      <textarea
-        id="intent-input"
-        class="intent-input"
-        rows="2"
-        maxlength="300"
-        placeholder="Note pour l'IA (optionnel) — ex : Comparer avec le rapport 2024"
-        aria-label="Note d'intention pour Gemini Notebook"
-        data-i18n-placeholder="intentNotePlaceholder"
-        data-i18n-aria-label="intentNoteLabelVisible"
-      ></textarea>
-      <span id="intent-counter" class="intent-counter">0 / 300</span>
-    </div>
-    <button id="btn-capture" class="btn primary-btn" disabled>
-      <span class="btn-text" data-i18n="popupTitleCapture">Capturer la page</span>
-      <span id="btn-spinner" class="spinner hidden"></span>
-    </button>
-  </section>
-
-  <!-- ZONE DE STATUT / INDICATEURS -->
-  <footer class="app-footer">
-    <div id="status-message" class="status-message" role="status" aria-live="polite" data-i18n="popupStatusReady">Prêt</div>
-  </footer>
+    <!-- ZONE DE STATUT / INDICATEURS -->
+    <footer class="app-footer">
+      <div id="status-message" class="status-message" role="status" aria-live="polite" data-i18n="popupStatusReady">Prêt</div>
+    </footer>
+  </div>
 
   <!-- BOUTON FERMER (Autonome, pour mobile et desktop) -->
-  <button id="btn-close" class="btn close-btn" data-i18n="btnClose">✖ Fermer</button>
+  <button id="btn-close" class="btn close-btn">
+    <span class="ui-icon icon-close" aria-hidden="true"></span>
+    <span data-i18n="btnClose">Fermer</span>
+  </button>
 
   <script type="module" src="popup.js"></script>
 </body>

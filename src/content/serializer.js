@@ -106,9 +106,14 @@ window.ClipperSerializer = {
    * HTML autonome avec grounding, puis protection Tainted Canvas (images → data URIs).
    *
    * @param  {HTMLElement} wrapperClone - Clone du body, utilisé en fallback si Readability échoue.
+   * @param  {Object}      [i18nLabels={}] - Libellés localisés transmis par le background.
+   * @param  {Object}      [options={}] - Options d'extraction ({ includeImages: true, convertImagesToDataUri: true }).
    * @returns {Promise<HTMLElement>}     - Container HTML 100% autonome (CSS + métadonnées + contenu).
    */
-  async process(wrapperClone, i18nLabels = {}) {
+  async process(wrapperClone, i18nLabels = {}, options = {}) {
+    const includeImages = options.includeImages !== false;
+    const convertImagesToDataUri = options.convertImagesToDataUri !== false;
+
     // ---------------------------------------------------------------
     // ÉTAPE 1 : Extraction du contenu via Readability
     // (Skill readability-content-extractor §2-3)
@@ -141,13 +146,31 @@ window.ClipperSerializer = {
     const container = this._buildContainer(contentHtml, title, byline, siteName, i18nLabels);
 
     // ---------------------------------------------------------------
-    // ÉTAPE 3 : Tainted Canvas Protection
-    // (Skill readability-content-extractor §4)
-    // AVANT de passer au convertisseur PDF, on DOIT convertir les
-    // images distantes en Base64 pour éviter les problèmes de CORS
-    // lors de jsPDF addImage().
+    // ÉTAPE 3 : Traitement des images selon le mode (Simple vs Riche)
     // ---------------------------------------------------------------
-    await this._protectTaintedCanvas(container);
+    if (!includeImages) {
+      // Mode Simple (PDF Simple / MD Simple) : suppression des images sans appel réseau
+      container.querySelectorAll('img').forEach(img => img.remove());
+    } else if (convertImagesToDataUri) {
+      // Mode PDF Riche : conversion des images distantes en Base64 pour jsPDF addImage()
+      await this._protectTaintedCanvas(container);
+    } else {
+      // Mode MD Riche : résolution des URLs relatives en URLs absolues propres
+      container.querySelectorAll('img').forEach(img => {
+        const src = img.getAttribute('src') || img.getAttribute('data-src') || '';
+        if (!src) {
+          img.remove();
+          return;
+        }
+        if (!src.startsWith('data:')) {
+          try {
+            img.setAttribute('src', new URL(src, window.location.href).href);
+          } catch {
+            img.remove();
+          }
+        }
+      });
+    }
 
     return container;
   },

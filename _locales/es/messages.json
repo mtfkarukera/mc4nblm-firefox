@@ -136,7 +136,7 @@
     "message": "Listo"
   },
   "btnClose": {
-    "message": "✖ Cerrar"
+    "message": "Cerrar"
   },
   "linkOpenNotebook": {
     "message": "Abrir cuaderno →"
@@ -401,5 +401,107 @@
   "formatLabelDirect": {
     "message": "Importación directa",
     "description": "Label for direct import format in status messages"
+  },
+  "btnSettingsTitle": {
+    "message": "Ajustes y modos de importación"
+  },
+  "settingsTitle": {
+    "message": "Ajustes"
+  },
+  "btnSettingsBack": {
+    "message": "← Volver"
+  },
+  "settingsModesTitle": {
+    "message": "Modos mostrados (2 a 4)"
+  },
+  "settingsModesHint": {
+    "message": "Elige de 2 a 4 modos para la barra principal. El modo URL es obligatorio."
+  },
+  "settingsCreoleLabel": {
+    "message": "🇬🇵 Mostrar la extensión en criollo (Kréyòl)"
+  },
+  "btnPdfRich": {
+    "message": "PDF+"
+  },
+  "btnPdfRichAriaLabel": {
+    "message": "Formato PDF enriquecido con imágenes y código"
+  },
+  "btnPdfRichTitle": {
+    "message": "PDF completo con imágenes integradas, tablas y bloques de código"
+  },
+  "btnPdfImages": {
+    "message": "PDF Img"
+  },
+  "btnPdfImagesAriaLabel": {
+    "message": "Formato PDF visual de página completa"
+  },
+  "btnPdfImagesTitle": {
+    "message": "Captura visual de la página entera dividida en páginas PDF"
+  },
+  "btnMdRich": {
+    "message": "MD+"
+  },
+  "btnMdRichAriaLabel": {
+    "message": "Formato Markdown enriquecido con enlaces e imágenes"
+  },
+  "btnMdRichTitle": {
+    "message": "Markdown enriquecido (negrita, cursiva, enlaces, imágenes y tablas)"
+  },
+  "btnScreenshotFull": {
+    "message": "Pág."
+  },
+  "btnScreenshotFullAriaLabel": {
+    "message": "Captura PNG de página completa"
+  },
+  "btnScreenshotFullTitle": {
+    "message": "Capturar la página entera en PNG"
+  },
+  "modePdfName": {
+    "message": "PDF (Simple)"
+  },
+  "modePdfDesc": {
+    "message": "Texto y tablas estructuradas, sin imágenes"
+  },
+  "modePdfRichName": {
+    "message": "PDF Rico (PDF+)"
+  },
+  "modePdfRichDesc": {
+    "message": "Imágenes integradas, tablas, citas y bloques de código"
+  },
+  "modePdfImagesName": {
+    "message": "PDF Imágenes (Página entera)"
+  },
+  "modePdfImagesDesc": {
+    "message": "Captura visual de la página dividida en páginas PDF"
+  },
+  "modeMdName": {
+    "message": "Markdown (Simple)"
+  },
+  "modeMdDesc": {
+    "message": "Texto ultraligero y tablas delimitadas por barras"
+  },
+  "modeMdRichName": {
+    "message": "Markdown Rico (MD+)"
+  },
+  "modeMdRichDesc": {
+    "message": "Negrita, cursiva, enlaces, imágenes y tablas"
+  },
+  "modeUrlName": {
+    "message": "URL / YouTube / Drive"
+  },
+  "modeUrlDesc": {
+    "message": "Importación por enlace, YouTube o Google Drive (obligatorio)"
+  },
+  "modeScreenshotName": {
+    "message": "Captura de pantalla visible"
+  },
+  "modeScreenshotDesc": {
+    "message": "Captura solo el área visible en PNG"
+  },
+  "modeScreenshotFullName": {
+    "message": "Captura de página entera"
+  },
+  "modeScreenshotFullDesc": {
+    "message": "Captura toda la página en PNG"
   }
 }

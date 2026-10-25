@@ -31,6 +31,27 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Assembler une liste de tranches PNG en PDF paginé (mode pdf_images)
+  if (message.action === "GENERATE_PDF_IMAGES") {
+    try {
+      const base64Pdf = window.ClipperPDFGenerator.generateFromImageSlices(
+        message.slices || [],
+        message.metadata || {},
+        message.intentNote ?? null,
+        message.i18nLabels || {}
+      );
+      sendResponse({
+        status: "SUCCESS",
+        payload: base64Pdf,
+        format: "pdf_images"
+      });
+    } catch (error) {
+      console.error('[MC] Génération PDF Images échouée:', error.message || String(error));
+      sendResponse({ status: "ERROR", error: error.message || String(error) });
+    }
+    return true;
+  }
+
   // Capturer le HTML de la sélection (demandé par le menu contextuel)
   if (message.action === "GET_SELECTION_HTML") {
     const selection = window.getSelection();
@@ -62,8 +83,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function handleCapture(format, intentNote = null, i18nLabels = {}) {
 
-  // 1. Quotas (seulement pour PDF, le Markdown est toujours léger)
-  if (format === "pdf") {
+  // 1. Quotas (seulement pour PDF / PDF Riche, le Markdown est toujours léger)
+  if (format === "pdf" || format === "pdf_rich") {
     window.ClipperPDFGenerator.checkWordCountQuota();
   }
 
@@ -71,16 +92,39 @@ async function handleCapture(format, intentNote = null, i18nLabels = {}) {
   const wrapperClone = document.createElement('div');
   wrapperClone.appendChild(document.body.cloneNode(true));
 
-  // 3. Serializer : extraction + container Reader Mode + images data URIs
-  const container = await window.ClipperSerializer.process(wrapperClone, i18nLabels);
+  // 3. Configurer les options du Serializer selon le mode choisi :
+  // - pdf (Simple)     : pas d'images
+  // - pdf_rich (Riche) : images converties en data URIs pour jsPDF
+  // - md (Simple)      : pas d'images
+  // - md_rich (Riche)  : images conservées avec URL absolue (sans data URI)
+  const serializerOptions = {
+    includeImages: format === "pdf_rich" || format === "md_rich",
+    convertImagesToDataUri: format === "pdf_rich"
+  };
 
-  if (format === "md") {
-    // 4a. Markdown Generator : texte structuré
-    const markdown = window.ClipperMarkdownGenerator.generate(container, intentNote, i18nLabels);
+  const container = await window.ClipperSerializer.process(
+    wrapperClone,
+    i18nLabels,
+    serializerOptions
+  );
+
+  if (format === "md" || format === "md_rich") {
+    // 4a. Markdown Generator : texte structuré (simple ou riche)
+    const markdown = window.ClipperMarkdownGenerator.generate(
+      container,
+      intentNote,
+      i18nLabels,
+      { rich: format === "md_rich" }
+    );
     return markdown;
   } else {
-    // 4b. PDF Generator : jsPDF sur le container autonome
-    const base64Pdf = await window.ClipperPDFGenerator.generate(container, intentNote, i18nLabels);
+    // 4b. PDF Generator : jsPDF sur le container autonome (simple ou riche)
+    const base64Pdf = await window.ClipperPDFGenerator.generate(
+      container,
+      intentNote,
+      i18nLabels,
+      { rich: format === "pdf_rich" }
+    );
     return base64Pdf;
   }
 }

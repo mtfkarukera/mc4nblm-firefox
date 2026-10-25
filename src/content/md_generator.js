@@ -105,10 +105,13 @@ window.ClipperMarkdownGenerator = {
   /**
    * Génère du Markdown structuré à partir du container HTML du Serializer V9.
    *
-   * @param {HTMLElement} container - Container avec CSS Reader Mode + data URI images.
+   * @param {HTMLElement|string} container - Container avec CSS Reader Mode ou HTML brut.
+   * @param {string|null} intentNote - Note d'intention optionnelle.
+   * @param {Object} i18nLabels - Labels localisés.
+   * @param {Object} [options={}] - Options de rendu ({ rich: boolean }).
    * @returns {string} Document Markdown complet.
    */
-  generate(container, intentNote = null, i18nLabels = {}) {
+  generate(container, intentNote = null, i18nLabels = {}, options = {}) {
     // Contexte Sélection : fragment HTML brut parsé via DOMParser (conforme AMO)
     if (typeof container === 'string') {
       const parser = new DOMParser();
@@ -116,7 +119,7 @@ window.ClipperMarkdownGenerator = {
       container = doc.body;
     }
 
-    const blocks = this._extractBlocks(container);
+    const blocks = this._extractBlocks(container, options);
 
     const lines = [];
 
@@ -295,15 +298,70 @@ window.ClipperMarkdownGenerator = {
   },
 
   /**
+   * Extrait le texte d'un élément HTML en préservant le formatage inline Markdown
+   * (gras, italique, code inline, liens) pour le mode MD Riche (md_rich).
+   *
+   * @param {Node} rootNode - Nœud DOM parent (<p>, <li>, etc.).
+   * @returns {string} Texte enrichi en syntaxe Markdown inline.
+   */
+  _extractInlineMarkdown(rootNode) {
+    const serializeNode = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return '';
+      }
+      const tag = node.tagName.toLowerCase();
+      if (['script', 'style', 'noscript', 'svg'].includes(tag)) return '';
+      if (tag === 'br') return '\n';
+
+      if (tag === 'code') {
+        const codeText = node.textContent.trim().replace(/`/g, "'");
+        return codeText ? `\`${codeText}\`` : '';
+      }
+
+      let inner = '';
+      for (const child of node.childNodes) {
+        inner += serializeNode(child);
+      }
+
+      if (tag === 'strong' || tag === 'b') {
+        const trimmed = inner.trim();
+        return trimmed ? ` **${trimmed}** ` : '';
+      }
+      if (tag === 'em' || tag === 'i') {
+        const trimmed = inner.trim();
+        return trimmed ? ` *${trimmed}* ` : '';
+      }
+      if (tag === 'a') {
+        const href = node.getAttribute('href') || '';
+        const trimmed = inner.trim();
+        if (trimmed && /^https?:\/\//i.test(href)) {
+          return `[${trimmed}](${href})`;
+        }
+        return inner;
+      }
+      return inner;
+    };
+
+    return serializeNode(rootNode)
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim();
+  },
+
+  /**
    * Parcourt récursivement le container HTML du Serializer V9 et produit une liste
    * de blocs sémantiques typés (p, h1-h6, table, li, code, blockquote, image, meta-*).
    * Similaire au walker du PDF Generator, avec des types enrichis pour le rendu Markdown.
    * Déduplique les blocs texte consécutifs identiques en fin de parcours.
    *
    * @param  {HTMLElement} container - Container autonome produit par ClipperSerializer.
+   * @param  {Object}      [options={}] - Options ({ rich: boolean }).
    * @returns {Array<Object>}         - Tableau de blocs sémantiques ordonnés.
    */
-  _extractBlocks(container) {
+  _extractBlocks(container, options = {}) {
+    const isRich = Boolean(options && options.rich);
     const blocks = [];
 
     const walk = (node) => {
@@ -342,13 +400,12 @@ window.ClipperMarkdownGenerator = {
         return;
       }
 
-      // Images — garder l'URL originale pour le Markdown
+      // Images — conservées uniquement en mode MD Riche (md_rich)
       if (tag === 'img') {
+        if (!isRich) return;
         const src = node.getAttribute('src') || '';
         const alt = node.getAttribute('alt') || '';
-        // En markdown, on référence l'URL. Si c'est un data URI, on le garde aussi
-        // car c'est le seul moyen de ne pas perdre l'info
-        if (src) {
+        if (src && !src.startsWith('data:')) {
           blocks.push({ type: 'image', url: src, alt: alt });
         }
         return;
@@ -387,7 +444,7 @@ window.ClipperMarkdownGenerator = {
 
       // Blockquote
       if (tag === 'blockquote') {
-        const text = node.textContent.trim();
+        const text = isRich ? this._extractInlineMarkdown(node) : node.textContent.trim();
         if (text) blocks.push({ type: 'blockquote', text });
         return;
       }
@@ -401,7 +458,7 @@ window.ClipperMarkdownGenerator = {
             if (hasBlock) {
               for (const sub of child.childNodes) walk(sub);
             } else {
-              const text = child.textContent.trim();
+              const text = isRich ? this._extractInlineMarkdown(child) : child.textContent.trim();
               if (text) blocks.push({ type: 'li-ordered', text, index: idx });
             }
             idx++;
@@ -416,7 +473,7 @@ window.ClipperMarkdownGenerator = {
         if (hasBlock) {
           for (const child of node.childNodes) walk(child);
         } else {
-          const text = node.textContent.trim();
+          const text = isRich ? this._extractInlineMarkdown(node) : node.textContent.trim();
           if (text) blocks.push({ type: 'li', text });
         }
         return;
@@ -429,7 +486,7 @@ window.ClipperMarkdownGenerator = {
           for (const child of node.childNodes) walk(child);
           return;
         }
-        const text = node.textContent.trim();
+        const text = isRich ? this._extractInlineMarkdown(node) : node.textContent.trim();
         if (text) blocks.push({ type: 'p', text });
         return;
       }

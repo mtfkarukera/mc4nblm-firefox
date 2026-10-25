@@ -14,12 +14,28 @@ export const INJECTION_PIPELINE = {
         "src/content/serializer.js",
         "src/content/pdf_generator.js",
     ],
+    pdf_rich: [
+        "lib/Readability.js",
+        "lib/jspdf.umd.min.js",
+        "src/content/serializer.js",
+        "src/content/pdf_generator.js",
+    ],
+    pdf_images: [
+        "lib/jspdf.umd.min.js",
+        "src/content/pdf_generator.js",
+    ],
     md: [
         "lib/Readability.js",
         "src/content/serializer.js",
         "src/content/md_generator.js",
     ],
+    md_rich: [
+        "lib/Readability.js",
+        "src/content/serializer.js",
+        "src/content/md_generator.js",
+    ],
     screenshot: [],
+    screenshot_full: [],
     url: [],
     direct: [],
     drive: [],

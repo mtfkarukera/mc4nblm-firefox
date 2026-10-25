@@ -4,6 +4,23 @@ Toutes les modifications majeures apportées au projet **Magic Clipper for Gemin
 
 ---
 
+## [v6.3.1] — 2026-10-25
+
+### ✨ Nouveautés — Panneau Paramètres (⚙️), Barre Personnalisable (2 à 4 modes), Captures Pleine Page & Localisation Portugaise
+- **Panneau Paramètres intégré (`⚙️`)** : Déplacement du sélecteur de langue Créole Guadeloupéen (`Kréyòl`) depuis l'en-tête de la popup vers une vue Paramètres dédiée, épurant l'en-tête principal.
+- **Barre d'outils personnalisable (2 à 4 modes parmi 8)** : L'utilisateur peut désormais choisir librement entre 2 et 4 modes d'import à afficher sur la popup (avec sauvegarde persistante dans `browser.storage.local` et verrouillage de sécurité sur le mode `🔗 URL / YouTube / Drive`).
+- **Nouveaux modes PDF (`📄 PDF Simple`, `📑 PDF+ Riche`, `🖼️ PDF Images`)** :
+  - `pdf` : PDF textuel et tabulaire rapide sans images.
+  - `pdf_rich` (actif par défaut) : Moteur PDF complet avec images Base64, tableaux `flattenTable()`, blocs de code sur fond gris et citations (`blockquote`) avec filet vertical.
+  - `pdf_images` : Capture visuelle de la page entière découpée en tranches A4 assemblées dans un document PDF avec en-tête de Grounding IA (idéal pour conserver le rendu visuel exact tout en contournant le filtre *Vision Safety* de Google sur les images PNG autonomes).
+- **Nouveau mode Markdown Riche (`✨ MD+`)** : Enrichissement non-destructif de `md_generator.js` préservant le gras (`**`), l'italique (`*`), le code inline (`` ` ``), les liens hypertextes `[texte](url)` et les images `![alt](url)` en plus des tableaux *pipe-delimited*.
+- **Nouveau mode Capture Page Entière (`📜 Page`)** : Capture PNG de l'intégralité de la page défilante via l'API native Firefox `browser.tabs.captureVisibleTab(..., { rect, scale })` avec plafonnement automatique des textures WebRender (`16 380 px`) et repli transparent sur le viewport.
+- **Icônes Vectorielles SVG Adaptatives Jour / Nuit (`icons/ui/*.svg`)** : Remplacement des emojis par 14 fichiers SVG vectoriels dédiés (`pdf.svg`, `pdf-rich.svg`, `pdf-images.svg`, `md.svg`, `md-rich.svg`, `url.svg`, `screenshot.svg`, `screenshot-full.svg`, `drive.svg`, `direct.svg`, `settings.svg`, `lock.svg`, `close.svg`, `selection.svg`) pilotés via CSS `mask-image` et `background-color: currentColor` pour s'adapter automatiquement aux thèmes Clair/Sombre ainsi qu'aux états `:hover` et `.active`.
+- **Localisation Portugaise (`pt`)** : Intégration complète de la langue portugaise (`_locales/pt/messages.json`, 150 clés à 100 %) portant le support multilingue natif à 7 langues (EN, FR, DE, ES, PT, VI, GCF), et intégration de la fiche de store en portugais dans le kit de soumission AMO.
+- **Garde-fou de Build (`tools/check-rpc-contract.js`)** : Vérification statique automatisée lors de `./build.sh` garantissant l'invariance du protocole Scotty (`notebook.google.com`, headers étapes 2 et 3), la préservation de `flattenTable`/`_tryReadability` et l'absence de `DEBUG = true`.
+
+---
+
 ## [v6.2.6] — 2026-10-24
 
 ### 🐛 Correctif Critique — Cohérence Domaine Scotty & Finalisation Upload

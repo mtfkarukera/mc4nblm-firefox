@@ -136,7 +136,7 @@
     "message": "Bereit"
   },
   "btnClose": {
-    "message": "✖ Schließen"
+    "message": "Schließen"
   },
   "linkOpenNotebook": {
     "message": "Notizbuch öffnen →"
@@ -401,5 +401,107 @@
   "formatLabelDirect": {
     "message": "Direktimport",
     "description": "Label for direct import format in status messages"
+  },
+  "btnSettingsTitle": {
+    "message": "Einstellungen und Importmodi"
+  },
+  "settingsTitle": {
+    "message": "Einstellungen"
+  },
+  "btnSettingsBack": {
+    "message": "← Zurück"
+  },
+  "settingsModesTitle": {
+    "message": "Angezeigte Modi (2 bis 4)"
+  },
+  "settingsModesHint": {
+    "message": "Wähle 2 bis 4 Modi für die Hauptleiste. Der URL-Modus ist erforderlich."
+  },
+  "settingsCreoleLabel": {
+    "message": "🇬🇵 Erweiterung auf Kreolisch anzeigen (Kréyòl)"
+  },
+  "btnPdfRich": {
+    "message": "PDF+"
+  },
+  "btnPdfRichAriaLabel": {
+    "message": "Rich-PDF-Format mit Bildern und Code"
+  },
+  "btnPdfRichTitle": {
+    "message": "Vollständiges PDF mit Bildern, Tabellen und Codeblöcken"
+  },
+  "btnPdfImages": {
+    "message": "PDF Img"
+  },
+  "btnPdfImagesAriaLabel": {
+    "message": "Ganzseitiges visuelles PDF-Format"
+  },
+  "btnPdfImagesTitle": {
+    "message": "Visuelle Aufnahme der gesamten Seite als PDF-Seiten"
+  },
+  "btnMdRich": {
+    "message": "MD+"
+  },
+  "btnMdRichAriaLabel": {
+    "message": "Rich-Markdown-Format mit Links und Bildern"
+  },
+  "btnMdRichTitle": {
+    "message": "Erweitertes Markdown (fett, kursiv, Links, Bilder und Tabellen)"
+  },
+  "btnScreenshotFull": {
+    "message": "Seite"
+  },
+  "btnScreenshotFullAriaLabel": {
+    "message": "Ganzseitiger PNG-Screenshot"
+  },
+  "btnScreenshotFullTitle": {
+    "message": "Gesamte Seite als PNG erfassen"
+  },
+  "modePdfName": {
+    "message": "PDF (Einfach)"
+  },
+  "modePdfDesc": {
+    "message": "Strukturierter Text und Tabellen, ohne Bilder"
+  },
+  "modePdfRichName": {
+    "message": "Rich PDF (PDF+)"
+  },
+  "modePdfRichDesc": {
+    "message": "Eingebettete Bilder, Tabellen, Zitate und Codeblöcke"
+  },
+  "modePdfImagesName": {
+    "message": "Bild-PDF (Ganze Seite)"
+  },
+  "modePdfImagesDesc": {
+    "message": "Visuelle Seitenaufnahme aufgeteilt in PDF-Seiten"
+  },
+  "modeMdName": {
+    "message": "Markdown (Einfach)"
+  },
+  "modeMdDesc": {
+    "message": "Ultraleichter Text und Pipe-Tabellen"
+  },
+  "modeMdRichName": {
+    "message": "Rich Markdown (MD+)"
+  },
+  "modeMdRichDesc": {
+    "message": "Fett, kursiv, Links, Bilder und Tabellen"
+  },
+  "modeUrlName": {
+    "message": "URL / YouTube / Drive"
+  },
+  "modeUrlDesc": {
+    "message": "Direkter Link-, YouTube- oder Google Drive-Import (erforderlich)"
+  },
+  "modeScreenshotName": {
+    "message": "Sichtbarer Bereich"
+  },
+  "modeScreenshotDesc": {
+    "message": "Erfasst nur den sichtbaren Bereich als PNG"
+  },
+  "modeScreenshotFullName": {
+    "message": "Ganze Seite erfassen"
+  },
+  "modeScreenshotFullDesc": {
+    "message": "Erfasst die gesamte Seite als PNG"
   }
 }

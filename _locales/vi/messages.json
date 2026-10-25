@@ -136,7 +136,7 @@
     "message": "Sẵn sàng"
   },
   "btnClose": {
-    "message": "✖ Đóng"
+    "message": "Đóng"
   },
   "linkOpenNotebook": {
     "message": "Mở sổ tay →"
@@ -401,5 +401,107 @@
   "formatLabelDirect": {
     "message": "Nhập trực tiếp",
     "description": "Label for direct import format in status messages"
+  },
+  "btnSettingsTitle": {
+    "message": "Cài đặt và chế độ nhập"
+  },
+  "settingsTitle": {
+    "message": "Cài đặt"
+  },
+  "btnSettingsBack": {
+    "message": "← Quay lại"
+  },
+  "settingsModesTitle": {
+    "message": "Chế độ hiển thị (2 đến 4)"
+  },
+  "settingsModesHint": {
+    "message": "Chọn từ 2 đến 4 chế độ cho thanh công cụ chính. Chế độ URL là bắt buộc."
+  },
+  "settingsCreoleLabel": {
+    "message": "🇬🇵 Hiển thị tiện ích bằng tiếng Creole (Kréyòl)"
+  },
+  "btnPdfRich": {
+    "message": "PDF+"
+  },
+  "btnPdfRichAriaLabel": {
+    "message": "Định dạng PDF giàu nội dung có hình ảnh và mã"
+  },
+  "btnPdfRichTitle": {
+    "message": "PDF đầy đủ kèm hình ảnh, bảng biểu và khối mã"
+  },
+  "btnPdfImages": {
+    "message": "PDF Img"
+  },
+  "btnPdfImagesAriaLabel": {
+    "message": "Định dạng PDF hình ảnh toàn trang"
+  },
+  "btnPdfImagesTitle": {
+    "message": "Chụp trực quan toàn bộ trang thành các trang PDF"
+  },
+  "btnMdRich": {
+    "message": "MD+"
+  },
+  "btnMdRichAriaLabel": {
+    "message": "Định dạng Markdown giàu nội dung kèm liên kết và ảnh"
+  },
+  "btnMdRichTitle": {
+    "message": "Markdown nâng cao (in đậm, in nghiêng, liên kết, ảnh và bảng)"
+  },
+  "btnScreenshotFull": {
+    "message": "Trang"
+  },
+  "btnScreenshotFullAriaLabel": {
+    "message": "Chụp PNG toàn bộ trang"
+  },
+  "btnScreenshotFullTitle": {
+    "message": "Chụp toàn bộ trang dưới dạng PNG"
+  },
+  "modePdfName": {
+    "message": "PDF (Đơn giản)"
+  },
+  "modePdfDesc": {
+    "message": "Văn bản và bảng biểu có cấu trúc, không kèm ảnh"
+  },
+  "modePdfRichName": {
+    "message": "PDF Nâng cao (PDF+)"
+  },
+  "modePdfRichDesc": {
+    "message": "Bao gồm hình ảnh, bảng biểu, trích dẫn và khối mã"
+  },
+  "modePdfImagesName": {
+    "message": "PDF Hình ảnh (Toàn trang)"
+  },
+  "modePdfImagesDesc": {
+    "message": "Chụp trực quan toàn trang chia thành các trang PDF"
+  },
+  "modeMdName": {
+    "message": "Markdown (Đơn giản)"
+  },
+  "modeMdDesc": {
+    "message": "Văn bản và bảng biểu siêu nhẹ"
+  },
+  "modeMdRichName": {
+    "message": "Markdown Nâng cao (MD+)"
+  },
+  "modeMdRichDesc": {
+    "message": "In đậm, in nghiêng, liên kết, hình ảnh và bảng biểu"
+  },
+  "modeUrlName": {
+    "message": "URL / YouTube / Drive"
+  },
+  "modeUrlDesc": {
+    "message": "Nhập qua liên kết, YouTube hoặc Google Drive (bắt buộc)"
+  },
+  "modeScreenshotName": {
+    "message": "Chụp vùng hiển thị"
+  },
+  "modeScreenshotDesc": {
+    "message": "Chỉ chụp vùng màn hình đang hiển thị dưới dạng PNG"
+  },
+  "modeScreenshotFullName": {
+    "message": "Chụp toàn bộ trang"
+  },
+  "modeScreenshotFullDesc": {
+    "message": "Chụp toàn bộ trang web dưới dạng PNG"
   }
 }

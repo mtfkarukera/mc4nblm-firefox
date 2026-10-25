@@ -19,6 +19,33 @@ const uiSelectionPreview = document.getElementById('selection-text-preview');
 const btnClearSelection = document.getElementById('btn-clear-selection');
 const intentInput = document.getElementById('intent-input');
 const intentCounter = document.getElementById('intent-counter');
+const btnSettings = document.getElementById('btn-settings');
+const btnSettingsBack = document.getElementById('btn-settings-back');
+const uiSettingsPanel = document.getElementById('settings-panel');
+const uiMainView = document.getElementById('main-view');
+const uiSettingsModesList = document.getElementById('settings-modes-list');
+const uiSettingsModesCounter = document.getElementById('settings-modes-counter');
+const uiToggleCreole = document.getElementById('toggle-creole');
+
+// Définition des 8 modes personnalisables dans les paramètres (2 à 4 actifs, 'url' obligatoire)
+const ALL_MODES = [
+  { id: 'pdf',             iconClass: 'icon-pdf',             nameKey: 'modePdfName',            descKey: 'modePdfDesc',            locked: false },
+  { id: 'pdf_rich',        iconClass: 'icon-pdf-rich',        nameKey: 'modePdfRichName',        descKey: 'modePdfRichDesc',        locked: false },
+  { id: 'pdf_images',      iconClass: 'icon-pdf-images',      nameKey: 'modePdfImagesName',      descKey: 'modePdfImagesDesc',      locked: false },
+  { id: 'md',              iconClass: 'icon-md',              nameKey: 'modeMdName',             descKey: 'modeMdDesc',             locked: false },
+  { id: 'md_rich',         iconClass: 'icon-md-rich',         nameKey: 'modeMdRichName',         descKey: 'modeMdRichDesc',         locked: false },
+  { id: 'url',             iconClass: 'icon-url',             nameKey: 'modeUrlName',            descKey: 'modeUrlDesc',            locked: true  },
+  { id: 'screenshot',      iconClass: 'icon-screenshot',      nameKey: 'modeScreenshotName',     descKey: 'modeScreenshotDesc',     locked: false },
+  { id: 'screenshot_full', iconClass: 'icon-screenshot-full', nameKey: 'modeScreenshotFullName', descKey: 'modeScreenshotFullDesc', locked: false }
+];
+
+const DEFAULT_ACTIVE_MODES = ['pdf_rich', 'md', 'url', 'screenshot'];
+const PDF_MODES = ['pdf', 'pdf_rich', 'pdf_images'];
+const MD_MODES = ['md', 'md_rich'];
+const SCREENSHOT_MODES = ['screenshot', 'screenshot_full'];
+const INTENT_SUPPORTED_MODES = new Set(['pdf', 'pdf_rich', 'pdf_images', 'md', 'md_rich']);
+
+let activeUserModes = [...DEFAULT_ACTIVE_MODES];
 
 const BINARY_EXTENSIONS = new Set([
   'pdf','mp3','mp4','wav','ogg','aac','m4a','flac','opus','amr','wma',
@@ -45,11 +72,12 @@ function hasBinaryExtension(url) {
 // Variables d'état
 let currentSelectedNotebookId = null;
 let allNotebooksCache = [];
-let currentFormat = "pdf";
+let currentFormat = "pdf_rich";
 let detectedFileInfo = null;
 let pendingSelection = null; // Sélection en attente (capturée via le menu contextuel)
 let keepAlivePort = null;   // Port runtime maintenant l'Event Page active pendant les captures
 let safetyResetTimer = null; // Timeout de sécurité UI (120s)
+let isDriveExclusiveMode = false; // Indique si la page courante est un fichier Google Drive
 
 /**
  * Ouvre un Port vers le background pour empêcher Firefox de décharger l'Event Page.
@@ -121,22 +149,200 @@ function applyI18n() {
   });
 
   // Update document language attribute
-  const resolvedLocale = document.getElementById('locale-selector').value === 'gcf' ? 'gcf' : (navigator.language || 'en').split('-')[0];
+  const isCreole = uiToggleCreole && uiToggleCreole.checked;
+  const resolvedLocale = isCreole ? 'gcf' : (navigator.language || 'en').split('-')[0];
   document.documentElement.lang = resolvedLocale;
 }
 
+/**
+ * Normalise et valide la liste des modes actifs de l'utilisateur (2 à 4 modes, 'url' obligatoire).
+ * @param {string[]} modes - Tableau d'IDs de modes.
+ * @returns {string[]} Liste validée dans l'ordre canonique de ALL_MODES.
+ */
+function sanitizeActiveModes(modes) {
+  if (!Array.isArray(modes)) return [...DEFAULT_ACTIVE_MODES];
+  const validIds = new Set(ALL_MODES.map(m => m.id));
+  const unique = Array.from(new Set(modes.filter(id => validIds.has(id))));
+  if (!unique.includes('url')) unique.push('url');
+  if (unique.length < 2 || unique.length > 4) {
+    return [...DEFAULT_ACTIVE_MODES];
+  }
+  return ALL_MODES.map(m => m.id).filter(id => unique.includes(id));
+}
+
+/**
+ * Applique la visibilité des boutons de la barre d'outils selon activeUserModes.
+ * Si le mode actif n'est plus dans activeUserModes, sélectionne le 1er mode disponible.
+ */
+function applyUserModePreferences() {
+  if (isDriveExclusiveMode) return;
+
+  const allFormatBtns = Array.from(uiFormatToggle.querySelectorAll('.format-btn[data-format]'));
+  allFormatBtns.forEach(btn => {
+    const fmt = btn.dataset.format;
+    if (fmt === 'drive') return;
+    if (activeUserModes.includes(fmt)) {
+      btn.classList.remove('hidden');
+      btn.style.display = '';
+    } else {
+      btn.classList.add('hidden');
+      btn.style.display = 'none';
+      btn.classList.remove('active');
+      btn.setAttribute('aria-pressed', 'false');
+    }
+  });
+
+  // Vérifier que currentFormat est toujours visible et non grisé
+  if (currentFormat !== 'direct' && currentFormat !== 'drive' && currentFormat !== 'selection') {
+    const activeBtn = uiFormatToggle.querySelector(`.format-btn[data-format="${currentFormat}"]`);
+    if (!activeBtn || activeBtn.classList.contains('hidden') || activeBtn.classList.contains('btn-disabled')) {
+      const firstAvailable = allFormatBtns.find(
+        b => b.dataset.format !== 'drive' &&
+             !b.classList.contains('hidden') &&
+             !b.classList.contains('btn-disabled')
+      );
+      allFormatBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      if (firstAvailable) {
+        firstAvailable.classList.add('active');
+        firstAvailable.setAttribute('aria-pressed', 'true');
+        currentFormat = firstAvailable.dataset.format;
+      }
+      updateCaptureButtonLabel();
+    }
+  }
+}
+
+/**
+ * Construit dynamiquement la liste des 8 modes dans le panneau Paramètres (zéro innerHTML).
+ */
+function renderSettingsModesList() {
+  if (!uiSettingsModesList) return;
+  uiSettingsModesList.replaceChildren();
+
+  if (uiSettingsModesCounter) {
+    uiSettingsModesCounter.textContent = `${activeUserModes.length} / 4`;
+  }
+
+  const count = activeUserModes.length;
+
+  ALL_MODES.forEach(mode => {
+    const isChecked = activeUserModes.includes(mode.id);
+    const isDisableUncheck = isChecked && (mode.locked || count <= 2);
+    const isDisableCheck = !isChecked && count >= 4;
+    const isInputDisabled = isDisableUncheck || isDisableCheck;
+
+    const labelRow = document.createElement('label');
+    labelRow.className = 'settings-mode-row' + (isInputDisabled ? ' mode-row-disabled' : '');
+
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'settings-mode-info';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'settings-mode-name';
+
+    const modeIcon = document.createElement('span');
+    modeIcon.className = `ui-icon ${mode.iconClass}`;
+    modeIcon.setAttribute('aria-hidden', 'true');
+    nameSpan.appendChild(modeIcon);
+
+    const nameText = document.createElement('span');
+    nameText.textContent = t(mode.nameKey);
+    nameSpan.appendChild(nameText);
+
+    if (mode.locked) {
+      const lockIcon = document.createElement('span');
+      lockIcon.className = 'ui-icon icon-lock';
+      lockIcon.setAttribute('aria-hidden', 'true');
+      nameSpan.appendChild(lockIcon);
+    }
+
+    const descSpan = document.createElement('span');
+    descSpan.className = 'settings-mode-desc';
+    descSpan.textContent = t(mode.descKey);
+
+    infoDiv.appendChild(nameSpan);
+    infoDiv.appendChild(descSpan);
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'settings-checkbox';
+    checkbox.checked = isChecked;
+    checkbox.disabled = isInputDisabled;
+
+    checkbox.addEventListener('change', async () => {
+      if (mode.locked) {
+        checkbox.checked = true;
+        return;
+      }
+      let nextModes;
+      if (checkbox.checked) {
+        if (activeUserModes.length >= 4) {
+          checkbox.checked = false;
+          return;
+        }
+        nextModes = sanitizeActiveModes([...activeUserModes, mode.id]);
+      } else {
+        if (activeUserModes.length <= 2) {
+          checkbox.checked = true;
+          return;
+        }
+        nextModes = sanitizeActiveModes(activeUserModes.filter(id => id !== mode.id));
+      }
+      activeUserModes = nextModes;
+      await browser.storage.local.set({ nwc_active_modes: activeUserModes });
+      applyUserModePreferences();
+      renderSettingsModesList();
+    });
+
+    labelRow.appendChild(infoDiv);
+    labelRow.appendChild(checkbox);
+    uiSettingsModesList.appendChild(labelRow);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-  const { locale } = await browser.storage.local.get('locale');
+  const stored = await browser.storage.local.get(['locale', 'nwc_active_modes']);
+  const locale = stored.locale;
+  activeUserModes = sanitizeActiveModes(stored.nwc_active_modes);
+
+  if (uiToggleCreole) {
+    uiToggleCreole.checked = (locale === 'gcf');
+    uiToggleCreole.addEventListener('change', async (e) => {
+      const nextLocale = e.target.checked ? 'gcf' : 'auto';
+      await browser.storage.local.set({ locale: nextLocale });
+      await setCustomLocale(nextLocale);
+      applyI18n();
+      renderSettingsModesList();
+      updateCaptureButtonLabel();
+    });
+  }
+
   await setCustomLocale(locale ?? '');
   applyI18n();
+  applyUserModePreferences();
+  renderSettingsModesList();
 
-  const localeSelector = document.getElementById('locale-selector');
-  if (localeSelector) {
-    localeSelector.value = (locale === 'gcf') ? 'gcf' : 'auto';
-    localeSelector.addEventListener('change', async (e) => {
-      await browser.storage.local.set({ locale: e.target.value });
-      await setCustomLocale(e.target.value);
-      applyI18n();
+  if (btnSettings && uiSettingsPanel && uiMainView) {
+    btnSettings.addEventListener('click', () => {
+      const isSettingsOpen = !uiSettingsPanel.classList.contains('hidden');
+      if (isSettingsOpen) {
+        uiSettingsPanel.classList.add('hidden');
+        uiMainView.classList.remove('hidden');
+      } else {
+        renderSettingsModesList();
+        uiMainView.classList.add('hidden');
+        uiSettingsPanel.classList.remove('hidden');
+      }
+    });
+  }
+
+  if (btnSettingsBack && uiSettingsPanel && uiMainView) {
+    btnSettingsBack.addEventListener('click', () => {
+      uiSettingsPanel.classList.add('hidden');
+      uiMainView.classList.remove('hidden');
     });
   }
 
@@ -251,10 +457,17 @@ document.addEventListener('DOMContentLoaded', async () => {
        await browser.storage.local.remove('nwc_pending_selection');
        pendingSelection = null;
        uiSelectionBanner.classList.add('hidden');
-       // Restaurer le format précédent
+       // Réactiver les boutons qui étaient grisés par la sélection
+       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => removeFormatBtnDisabled(b));
+       // Restaurer le premier format actif disponible
        if (currentFormat === 'selection') {
-         currentFormat = 'pdf';
-         uiFormatToggle.querySelector('[data-format="pdf"]').classList.add('active');
+         currentFormat = activeUserModes[0] || 'pdf_rich';
+         applyUserModePreferences();
+         const defaultBtn = uiFormatToggle.querySelector(`[data-format="${currentFormat}"]`);
+         if (defaultBtn) {
+           defaultBtn.classList.add('active');
+           defaultBtn.setAttribute('aria-pressed', 'true');
+         }
          updateCaptureButtonLabel();
        }
      });
@@ -453,7 +666,18 @@ function startCaptureProcess() {
    uiSearchInput.disabled = true;
    btnCustomSpinner.classList.remove('hidden');
 
-   const formatLabels = { pdf: 'PDF', md: 'Markdown', url: 'URL', screenshot: t('btnScreenshot') || 'Screenshot', direct: t('formatLabelDirect') || 'Direct Import', drive: 'Google Drive' };
+   const formatLabels = {
+     pdf: 'PDF',
+     pdf_rich: 'PDF+',
+     pdf_images: 'PDF Images',
+     md: 'Markdown',
+     md_rich: 'Markdown+',
+     url: 'URL',
+     screenshot: t('btnScreenshot') || 'Screenshot',
+     screenshot_full: t('btnScreenshotFull') || 'Screenshot Page',
+     direct: t('formatLabelDirect') || 'Direct Import',
+     drive: 'Google Drive'
+   };
    const label = formatLabels[currentFormat] || currentFormat;
    updateStatus(t('importingFormat').replace('{label}', label), "info");
 
@@ -483,10 +707,10 @@ function updateCaptureButtonLabel() {
    const btnText = btnCapture.querySelector('.btn-text');
    btnText.textContent = t('popupTitleCapture');
 
-   // Affichage conditionnel du champ d'intention
+   // Affichage conditionnel du champ d'intention (tous les modes PDF et Markdown)
    const intentWrapper = document.getElementById('intent-wrapper');
    if (intentWrapper) {
-     if (currentFormat === 'pdf' || currentFormat === 'md') {
+     if (INTENT_SUPPORTED_MODES.has(currentFormat)) {
        intentWrapper.classList.remove('hidden');
      } else {
        intentWrapper.classList.add('hidden');
@@ -494,6 +718,17 @@ function updateCaptureButtonLabel() {
        if (intentCounter) intentCounter.textContent = "0 / 300";
      }
    }
+}
+
+/**
+ * Désactive un groupe de boutons de format par liste d'IDs.
+ * @param {string[]} formatIds - IDs de formats à griser.
+ */
+function disableFormatGroup(formatIds) {
+  formatIds.forEach(fmt => {
+    const btn = uiFormatToggle.querySelector(`[data-format="${fmt}"]`);
+    if (btn) setFormatBtnDisabled(btn);
+  });
 }
 
 /**
@@ -506,16 +741,10 @@ async function detectActiveTabFileType() {
      if (tabs.length === 0) return;
 
      const url = tabs[0].url;
-
-     const pdfBtn = uiFormatToggle.querySelector('[data-format="pdf"]');
-     const mdBtn = uiFormatToggle.querySelector('[data-format="md"]');
      const urlBtn = uiFormatToggle.querySelector('[data-format="url"]');
-     const screenshotBtn = uiFormatToggle.querySelector('[data-format="screenshot"]');
 
      if (isYouTubeWatch(url)) {
-       setFormatBtnDisabled(pdfBtn);
-       setFormatBtnDisabled(mdBtn);
-       setFormatBtnDisabled(screenshotBtn);
+       disableFormatGroup([...PDF_MODES, ...MD_MODES, ...SCREENSHOT_MODES]);
        if (btnDirectImport) {
          setFormatBtnDisabled(btnDirectImport);
        }
@@ -529,8 +758,10 @@ async function detectActiveTabFileType() {
             btnDirectImport.classList.remove('active');
             btnDirectImport.setAttribute('aria-pressed', 'false');
           }
-          urlBtn.classList.add('active');
-          urlBtn.setAttribute('aria-pressed', 'true');
+          if (urlBtn) {
+            urlBtn.classList.add('active');
+            urlBtn.setAttribute('aria-pressed', 'true');
+          }
          currentFormat = 'url';
          updateCaptureButtonLabel();
        }
@@ -538,9 +769,7 @@ async function detectActiveTabFileType() {
      }
 
      if (hasBinaryExtension(url)) {
-        setFormatBtnDisabled(pdfBtn);
-        setFormatBtnDisabled(mdBtn);
-        setFormatBtnDisabled(screenshotBtn);
+        disableFormatGroup([...PDF_MODES, ...MD_MODES, ...SCREENSHOT_MODES]);
 
        const ext = new URL(url).pathname.split('.').pop().toLowerCase();
        const label = ext.toUpperCase();
@@ -574,9 +803,7 @@ async function detectActiveTabFileType() {
          url
        });
         if (isBinary) {
-          setFormatBtnDisabled(pdfBtn);
-          setFormatBtnDisabled(mdBtn);
-          setFormatBtnDisabled(screenshotBtn);
+          disableFormatGroup([...PDF_MODES, ...MD_MODES, ...SCREENSHOT_MODES]);
 
          // Extraire un label lisible depuis le MIME (ex: "audio/mpeg" → "AUDIO")
          const mimeLabel = mime.split('/')[0].toUpperCase();
@@ -610,16 +837,16 @@ async function detectActiveTabFileType() {
          if (driveInfo) {
              const driveBtn = document.getElementById('btn-drive-import');
              if (driveBtn) {
+                 isDriveExclusiveMode = true;
                  driveBtn.style.display = 'flex';
                  driveBtn.classList.remove('hidden');
 
                  if (driveInfo.typeStr === 'file') {
                      // Fichier hébergé sur Drive → Drive + Screenshot
-                     // (Drive pour les docs textuels, Screenshot pour le reste)
                      uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
                           b.classList.remove('active');
                           b.setAttribute('aria-pressed', 'false');
-                          if (['pdf', 'md', 'url'].includes(b.dataset.format)) {
+                          if ([...PDF_MODES, ...MD_MODES, 'url'].includes(b.dataset.format)) {
                               b.style.display = 'none';
                           }
                       });
@@ -628,7 +855,7 @@ async function detectActiveTabFileType() {
                      uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
                           b.classList.remove('active');
                           b.setAttribute('aria-pressed', 'false');
-                          if (['pdf', 'md', 'url', 'screenshot'].includes(b.dataset.format)) {
+                          if ([...PDF_MODES, ...MD_MODES, 'url', ...SCREENSHOT_MODES].includes(b.dataset.format)) {
                               b.style.display = 'none';
                           }
                       });
@@ -682,26 +909,20 @@ async function detectActiveTabFileType() {
  * - Fichier local (file://) : URL grisé 
  */
 function applyButtonVisibility(fileInfo) {
-   const pdfBtn = uiFormatToggle.querySelector('[data-format="pdf"]');
-   const mdBtn = uiFormatToggle.querySelector('[data-format="md"]');
    const urlBtn = uiFormatToggle.querySelector('[data-format="url"]');
-   const screenshotBtn = uiFormatToggle.querySelector('[data-format="screenshot"]');
 
    // Images : PDF/MD n'ont pas de sens (Readability sur un viewer d'image = garbled)
    if (fileInfo.category === 'image') {
-      setFormatBtnDisabled(pdfBtn);
-      setFormatBtnDisabled(mdBtn);
+      disableFormatGroup([...PDF_MODES, ...MD_MODES]);
     }
 
    // Audio/Vidéo : PDF/MD/Screenshot n'ont aucun sens
    if (fileInfo.category === 'audio' || fileInfo.category === 'video') {
-      setFormatBtnDisabled(pdfBtn);
-      setFormatBtnDisabled(mdBtn);
-      setFormatBtnDisabled(screenshotBtn);
+      disableFormatGroup([...PDF_MODES, ...MD_MODES, ...SCREENSHOT_MODES]);
     }
 
    // Fichier local : URL grisé (Google ne peut pas scraper file://)
-   if (fileInfo.isLocal) {
+   if (fileInfo.isLocal && urlBtn) {
       setFormatBtnDisabled(urlBtn);
     }
 
@@ -794,7 +1015,7 @@ function updateStatus(message, type, linkUrl, showDownload) {
   }
   
   if (showDownload) {
-    const ext = currentFormat === "md" ? ".md" : ".pdf";
+    const ext = MD_MODES.includes(currentFormat) ? ".md" : ".pdf";
     const dlLink = document.createElement('a');
     dlLink.href = '#';
     dlLink.textContent = ' ' + t('linkDownloadFile').replace('{ext}', ext);

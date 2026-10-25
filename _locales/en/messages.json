@@ -138,7 +138,7 @@
     "description": "Idle status indicator shown in the popup"
   },
   "btnClose": {
-    "message": "✖ Close",
+    "message": "Close",
     "description": "Label for the close button in the popup"
   },
   "linkOpenNotebook": {
@@ -468,5 +468,107 @@
   "formatLabelDirect": {
     "message": "Direct Import",
     "description": "Label for direct import format in status messages"
+  },
+  "btnSettingsTitle": {
+    "message": "Settings and import modes"
+  },
+  "settingsTitle": {
+    "message": "Settings"
+  },
+  "btnSettingsBack": {
+    "message": "← Back"
+  },
+  "settingsModesTitle": {
+    "message": "Displayed modes (2 to 4)"
+  },
+  "settingsModesHint": {
+    "message": "Select 2 to 4 modes for your main toolbar. URL mode is required."
+  },
+  "settingsCreoleLabel": {
+    "message": "🇬🇵 Display extension in Guadeloupean Creole (Kréyòl)"
+  },
+  "btnPdfRich": {
+    "message": "PDF+"
+  },
+  "btnPdfRichAriaLabel": {
+    "message": "Rich PDF format with images and code"
+  },
+  "btnPdfRichTitle": {
+    "message": "Full PDF with embedded images, tables, and code blocks"
+  },
+  "btnPdfImages": {
+    "message": "PDF Img"
+  },
+  "btnPdfImagesAriaLabel": {
+    "message": "Full-page visual PDF format"
+  },
+  "btnPdfImagesTitle": {
+    "message": "Full-page visual capture sliced into PDF pages"
+  },
+  "btnMdRich": {
+    "message": "MD+"
+  },
+  "btnMdRichAriaLabel": {
+    "message": "Rich Markdown format with links and images"
+  },
+  "btnMdRichTitle": {
+    "message": "Enriched Markdown (bold, italic, links, images, and tables)"
+  },
+  "btnScreenshotFull": {
+    "message": "Page"
+  },
+  "btnScreenshotFullAriaLabel": {
+    "message": "Full-page PNG screenshot"
+  },
+  "btnScreenshotFullTitle": {
+    "message": "Capture the entire page as PNG"
+  },
+  "modePdfName": {
+    "message": "PDF (Simple)"
+  },
+  "modePdfDesc": {
+    "message": "Structured text and tables, without images"
+  },
+  "modePdfRichName": {
+    "message": "Rich PDF (PDF+)"
+  },
+  "modePdfRichDesc": {
+    "message": "Embedded images, tables, quotes, and code blocks"
+  },
+  "modePdfImagesName": {
+    "message": "Image PDF (Full page)"
+  },
+  "modePdfImagesDesc": {
+    "message": "Visual page capture sliced into PDF pages"
+  },
+  "modeMdName": {
+    "message": "Markdown (Simple)"
+  },
+  "modeMdDesc": {
+    "message": "Ultra-light text and pipe-delimited tables"
+  },
+  "modeMdRichName": {
+    "message": "Rich Markdown (MD+)"
+  },
+  "modeMdRichDesc": {
+    "message": "Bold, italic, links, images, and tables"
+  },
+  "modeUrlName": {
+    "message": "URL / YouTube / Drive"
+  },
+  "modeUrlDesc": {
+    "message": "Direct link, YouTube, or Google Drive import (required)"
+  },
+  "modeScreenshotName": {
+    "message": "Visible screen capture"
+  },
+  "modeScreenshotDesc": {
+    "message": "Captures only the visible viewport as PNG"
+  },
+  "modeScreenshotFullName": {
+    "message": "Full-page capture"
+  },
+  "modeScreenshotFullDesc": {
+    "message": "Captures the entire scrollable page as PNG"
   }
 }

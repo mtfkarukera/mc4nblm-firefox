@@ -1,0 +1,608 @@
+{
+  "extensionName": {
+    "message": "Magic Clipper for Gemini Notebook",
+    "description": "Extension name displayed in Firefox about:addons"
+  },
+  "extensionDescription": {
+    "message": "Capture, limpe e importe qualquer página web diretamente para o Google Gemini Notebook (anteriormente NotebookLM) com precisão mágica.",
+    "description": "Extension description displayed in Firefox about:addons"
+  },
+  "popupTitleCapture": {
+    "message": "Capturar esta página",
+    "description": "Main popup heading"
+  },
+  "popupLabelSelectNotebook": {
+    "message": "Selecione um caderno",
+    "description": "Label for notebook selection"
+  },
+  "popupPlaceholderSearchNotebook": {
+    "message": "Pesquisar cadernos...",
+    "description": "Placeholder for Fast Research input"
+  },
+  "popupLabelLocale": {
+    "message": "Idioma",
+    "description": "Label for the language selector"
+  },
+  "btnPdf": {
+    "message": "PDF",
+    "description": "Button label — export as PDF"
+  },
+  "btnPdfAriaLabel": {
+    "message": "Exportar página como PDF e importar para o Gemini Notebook",
+    "description": "Accessible label for the PDF button"
+  },
+  "btnMarkdown": {
+    "message": "Markdown",
+    "description": "Button label — export as Markdown"
+  },
+  "btnMarkdownAriaLabel": {
+    "message": "Exportar página como Markdown e importar para o Gemini Notebook",
+    "description": "Accessible label for the Markdown button"
+  },
+  "btnUrl": {
+    "message": "URL",
+    "description": "Button label — send URL"
+  },
+  "btnUrlAriaLabel": {
+    "message": "Enviar URL direta para o Gemini Notebook",
+    "description": "Accessible label for the URL button"
+  },
+  "btnScreenshot": {
+    "message": "Captura de tela",
+    "description": "Button label — capture screenshot"
+  },
+  "btnScreenshotAriaLabel": {
+    "message": "Capturar imagem e importar para o Gemini Notebook",
+    "description": "Accessible label for the Screenshot button"
+  },
+  "btnDirect": {
+    "message": "Importação Direta",
+    "description": "Button label — direct file import"
+  },
+  "btnDirectAriaLabel": {
+    "message": "Importar arquivo diretamente para o Gemini Notebook",
+    "description": "Accessible label for the Direct Import button"
+  },
+  "btnDrive": {
+    "message": "Google Drive",
+    "description": "Button label — Google Drive import"
+  },
+  "btnDriveAriaLabel": {
+    "message": "Importar do Google Drive",
+    "description": "Accessible label for the Google Drive button"
+  },
+  "intentNoteLabelVisible": {
+    "message": "Intenção de pesquisa (opcional)",
+    "description": "Label for research intention note textarea"
+  },
+  "intentNotePlaceholder": {
+    "message": "Opcional: descreva sua intenção de pesquisa...",
+    "description": "Placeholder for research intention textarea"
+  },
+  "statusCapturing": {
+    "message": "Capturando…",
+    "description": "Status text while capturing"
+  },
+  "statusUploading": {
+    "message": "Enviando… ($PERCENT$%)",
+    "description": "Status text during upload with percentage",
+    "placeholders": {
+      "PERCENT": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "statusSuccess": {
+    "message": "Importado com sucesso ✓",
+    "description": "Status text on successful import"
+  },
+  "statusProcessing": {
+    "message": "Processando…",
+    "description": "Status text while processing document"
+  },
+  "errorApiChanged": {
+    "message": "A API do Gemini Notebook foi alterada. Uma atualização é necessária.",
+    "description": "Error message when Google changes the RPC structure"
+  },
+  "errorAuthExpired": {
+    "message": "Sessão expirada. Faça login no Gemini Notebook novamente.",
+    "description": "Error message when cookies or auth tokens are expired"
+  },
+  "errorUploadSessionMissing": {
+    "message": "Erro ao inicializar a sessão de upload.",
+    "description": "Error message when upload session cannot be created"
+  },
+  "errorTimeout": {
+    "message": "A solicitação expirou. Verifique sua conexão.",
+    "description": "Error message on network timeout"
+  },
+  "errorInjectionFailed": {
+    "message": "Não é possível ativar o clipper nesta página restrita.",
+    "description": "Error message when content scripts cannot be injected"
+  },
+  "errorUnknown": {
+    "message": "Ocorreu um erro desconhecido. Verifique o console.",
+    "description": "Fallback generic error message"
+  },
+  "menuContextImportSelection": {
+    "message": "Importar seleção para o Gemini Notebook",
+    "description": "Context menu item label for selected text"
+  },
+  "popupLabelFormat": {
+    "message": "Formato de importação",
+    "description": "Section title in popup above format buttons"
+  },
+  "popupStatusReady": {
+    "message": "Pronto",
+    "description": "Default status text in popup"
+  },
+  "btnClose": {
+    "message": "Fechar",
+    "description": "Accessible label for close button in popup"
+  },
+  "linkOpenNotebook": {
+    "message": "Abrir caderno →",
+    "description": "Link text to open notebook in a new tab"
+  },
+  "linkDownloadFile": {
+    "message": "Baixar {ext} ↓",
+    "description": "Link text to download captured file locally"
+  },
+  "linkDownloading": {
+    "message": "Baixando...",
+    "description": "Status text while file is downloading"
+  },
+  "linkDownloaded": {
+    "message": "✅ Baixado",
+    "description": "Status text after file download completes"
+  },
+  "statusConnected": {
+    "message": "Conectado ({type})",
+    "description": "Badge showing authentication status"
+  },
+  "statusDisconnected": {
+    "message": "Desconectado",
+    "description": "Badge showing user is not authenticated"
+  },
+  "errAuth": {
+    "message": "Erro de autenticação.",
+    "description": "Error message when authentication fails"
+  },
+  "loadingNotebooks": {
+    "message": "Carregando cadernos...",
+    "description": "Status text while notebook list is loading"
+  },
+  "errLoadNotebooks": {
+    "message": "Erro ao carregar os cadernos.",
+    "description": "Error message when fetching notebooks fails"
+  },
+  "noNotebookFound": {
+    "message": "Nenhum caderno encontrado.",
+    "description": "Status text when no notebooks match search"
+  },
+  "notebookNotFound": {
+    "message": "Caderno não encontrado.",
+    "description": "Error when target notebook cannot be resolved"
+  },
+  "errNoSearchTerm": {
+    "message": "Digite o nome de um caderno no campo de busca.",
+    "description": "Error when creating notebook without entering a name"
+  },
+  "creatingNotebook": {
+    "message": "Criando caderno \"{title}\"...",
+    "description": "Status text while creating a new notebook"
+  },
+  "notebookCreated": {
+    "message": "Caderno \"{title}\" criado ✅",
+    "description": "Status text when notebook is created successfully"
+  },
+  "errGeneric": {
+    "message": "Erro: {msg}",
+    "description": "Generic parameterized error message"
+  },
+  "errNoNotebook": {
+    "message": "Selecione um caderno primeiro.",
+    "description": "Validation message when no notebook is selected"
+  },
+  "importingSelection": {
+    "message": "📋 Importando seleção...",
+    "description": "Status text while importing text selection"
+  },
+  "importingFormat": {
+    "message": "Importando como {label}...",
+    "description": "Status text showing format being imported"
+  },
+  "warnLocalFile": {
+    "message": "⚠️ Arquivo local — a importação direta não está disponível.",
+    "description": "Warning shown for file:// URLs"
+  },
+  "errDownload": {
+    "message": "❌ Erro",
+    "description": "Status text when local download fails"
+  },
+  "errGenericOccurred": {
+    "message": "Ocorreu um erro.",
+    "description": "Short generic error text"
+  },
+  "apiChanged": {
+    "message": "A API do Gemini Notebook foi atualizada pelo Google. Uma atualização da extensão é necessária.",
+    "description": "Detailed error when Google updates the API"
+  },
+  "sessionExpired": {
+    "message": "Sessão expirada. Faça login novamente em notebooklm.google.com.",
+    "description": "Detailed error when session cookies expire"
+  },
+  "uploadSessionFailed": {
+    "message": "Falha no envio: não foi possível obter uma sessão de upload.",
+    "description": "Error when Scotty upload initialization fails"
+  },
+  "timeout": {
+    "message": "A solicitação expirou. Verifique sua conexão e tente novamente.",
+    "description": "Detailed timeout message"
+  },
+  "unexpectedError": {
+    "message": "Ocorreu um erro inesperado. Verifique o console para mais detalhes.",
+    "description": "Detailed fallback error message"
+  },
+  "errFileReader": {
+    "message": "Falha na leitura do arquivo.",
+    "description": "Error when FileReader cannot read local content"
+  },
+  "errNoCapture": {
+    "message": "Nenhuma captura disponível.",
+    "description": "Error when trying to download without prior capture"
+  },
+  "errCaptureInProgress": {
+    "message": "Uma captura já está em andamento. Aguarde.",
+    "description": "Warning when capture is triggered while another is active"
+  },
+  "statusCreatingNb": {
+    "message": "Criando caderno...",
+    "description": "Short status while creating notebook"
+  },
+  "statusUploadSelection": {
+    "message": "📋 Enviando seleção...",
+    "description": "Status while uploading text selection"
+  },
+  "statusImportedSelection": {
+    "message": "✅ Seleção importada!",
+    "description": "Success message after selection import"
+  },
+  "notifSelectionTitle": {
+    "message": "📎 Salvar seleção no Gemini Notebook",
+    "description": "Notification title for selection clip"
+  },
+  "notifSelectionCaptured": {
+    "message": "Seleção capturada ✓",
+    "description": "Notification body when selection is captured"
+  },
+  "notifSelectionMsg": {
+    "message": "Clique no botão do Magic Clipper para escolher um caderno.",
+    "description": "Notification instruction to choose a notebook"
+  },
+  "notifSuccessMsg": {
+    "message": "\"{title}\" adicionado como {format} com sucesso!",
+    "description": "Notification on successful capture completion"
+  },
+  "statusFetchSession": {
+    "message": "Recuperando sessão pessoal...",
+    "description": "Status while fetching auth cookies"
+  },
+  "statusScreenshot": {
+    "message": "📸 Capturando janela visível...",
+    "description": "Status while taking viewport screenshot"
+  },
+  "statusUploadScreenshot": {
+    "message": "📸 Enviando captura de tela...",
+    "description": "Status while uploading screenshot image"
+  },
+  "statusImportedScreenshot": {
+    "message": "✅ Captura de tela importada!",
+    "description": "Success message after screenshot import"
+  },
+  "statusDownloadFile": {
+    "message": "⚡ Baixando arquivo...",
+    "description": "Status while downloading remote file for direct import"
+  },
+  "statusUploadFile": {
+    "message": "⚡ Enviando {ext}...",
+    "description": "Status while uploading direct file to notebook"
+  },
+  "statusImportedFile": {
+    "message": "✅ Arquivo importado diretamente!",
+    "description": "Success message after direct file import"
+  },
+  "statusDrive": {
+    "message": "☁️ Conectando ao Google Drive...",
+    "description": "Status while importing Drive document"
+  },
+  "statusImportedDrive": {
+    "message": "✅ Documento do Google Drive sincronizado!",
+    "description": "Success message after Drive import"
+  },
+  "statusYoutube": {
+    "message": "YouTube detectado → importação nativa...",
+    "description": "Status when YouTube video is detected"
+  },
+  "statusSendUrl": {
+    "message": "Enviando URL para o Gemini Notebook...",
+    "description": "Status while sending URL to server"
+  },
+  "statusImportedYoutube": {
+    "message": "✅ Vídeo do YouTube importado!",
+    "description": "Success message after YouTube video import"
+  },
+  "statusImportedUrl": {
+    "message": "✅ URL importada!",
+    "description": "Success message after URL import"
+  },
+  "statusDomCapture": {
+    "message": "Solicitando captura do DOM...",
+    "description": "Status while content script serializes DOM"
+  },
+  "statusSendMarkdown": {
+    "message": "Enviando Markdown (fonte de texto)...",
+    "description": "Status while uploading Markdown text"
+  },
+  "statusImportedMarkdown": {
+    "message": "✅ Markdown importado!",
+    "description": "Success message after Markdown import"
+  },
+  "statusCheckQuota": {
+    "message": "Verificando cotas de segurança...",
+    "description": "Status while checking file size quotas before upload"
+  },
+  "statusSendPdf": {
+    "message": "Enviando PDF (Servidores do Google)...",
+    "description": "Status while uploading PDF file"
+  },
+  "statusImportedPdf": {
+    "message": "✅ PDF importado!",
+    "description": "Success message after PDF import"
+  },
+  "errGetNotebooks": {
+    "message": "Não foi possível recuperar seus cadernos. Verifique sua conexão.",
+    "description": "Error message when getNotebooks RPC fails"
+  },
+  "errCreateNotebook": {
+    "message": "Não foi possível criar o caderno. Verifique sua conexão.",
+    "description": "Error message when createNotebook RPC fails"
+  },
+  "errSelectionFailed": {
+    "message": "Não foi possível importar a seleção. Tente novamente.",
+    "description": "Error message when selection import fails"
+  },
+  "errWorkflowFailed": {
+    "message": "Ocorreu um erro durante a importação. Verifique o console.",
+    "description": "General workflow failure message"
+  },
+  "errInjectionFailed": {
+    "message": "Não é possível ativar o clipper nesta página (sistema ou restrita).",
+    "description": "Error when executeScript is denied"
+  },
+  "popupTitleAccountSwitcher": {
+    "message": "Trocar de conta Google",
+    "description": "Label for Google account switcher dropdown"
+  },
+  "statusConnecting": {
+    "message": "Conectando...",
+    "description": "Status text while connecting to Google"
+  },
+  "btnCreateNotebookTitle": {
+    "message": "Criar um novo caderno",
+    "description": "Tooltip for create notebook button"
+  },
+  "btnPdfTitle": {
+    "message": "Imagens integradas, layout visual",
+    "description": "Tooltip for PDF button"
+  },
+  "btnMarkdownTitle": {
+    "message": "Tabelas perfeitas, ultraleve, nativo do Gemini",
+    "description": "Tooltip for Markdown button"
+  },
+  "btnUrlTitle": {
+    "message": "Importação instantânea — o Gemini Notebook processa a página",
+    "description": "Tooltip for URL button"
+  },
+  "btnScreenshotTitle": {
+    "message": "Capturar janela visível como PNG",
+    "description": "Tooltip for Screenshot button"
+  },
+  "btnDriveTitle": {
+    "message": "Sincronização nativa com o Google Drive",
+    "description": "Tooltip for Drive button"
+  },
+  "btnDirectTitle": {
+    "message": "Importar o arquivo original como está",
+    "description": "Tooltip for Direct Import button"
+  },
+  "btnClearSelectionTitle": {
+    "message": "Cancelar",
+    "description": "Tooltip for cancel selection button"
+  },
+  "metaUntitledDocument": {
+    "message": "Documento sem título",
+    "description": "Fallback title when page title is empty"
+  },
+  "metaCaptureHeader": {
+    "message": "Metadados de Captura (Gemini Notebook)",
+    "description": "Header for AI grounding block in PDF"
+  },
+  "metaAuthorPrefix": {
+    "message": "Por:",
+    "description": "Author prefix in grounding block"
+  },
+  "metaSitePrefix": {
+    "message": "Site:",
+    "description": "Site prefix in grounding block"
+  },
+  "metaDatePrefix": {
+    "message": "Capturado em:",
+    "description": "Capture date prefix in grounding block"
+  },
+  "intentHeader": {
+    "message": "INTENÇÃO DE PESQUISA",
+    "description": "Header for user intent note injected in PDF/MD"
+  },
+  "labelSource": {
+    "message": "Fonte:",
+    "description": "Label for source link"
+  },
+  "labelTitle": {
+    "message": "Título:",
+    "description": "Label for document title"
+  },
+  "labelCaptureDate": {
+    "message": "Data da captura:",
+    "description": "Label for capture date"
+  },
+  "selectionFallbackTitle": {
+    "message": "Seleção",
+    "description": "Default title for text selection captures"
+  },
+  "autoNotebookTitle": {
+    "message": "Captura - {date}",
+    "description": "Default title when automatically creating a notebook"
+  },
+  "formatLabelDirect": {
+    "message": "Importação Direta",
+    "description": "Display label for direct format"
+  },
+  "btnSettingsTitle": {
+    "message": "Configurações e modos de importação",
+    "description": "Tooltip for the settings gear button in popup header"
+  },
+  "settingsTitle": {
+    "message": "Configurações",
+    "description": "Title of the settings panel"
+  },
+  "btnSettingsBack": {
+    "message": "← Voltar",
+    "description": "Back button label in settings panel"
+  },
+  "settingsModesTitle": {
+    "message": "Modos exibidos (2 a 4)",
+    "description": "Header above mode checkboxes in settings panel"
+  },
+  "settingsModesHint": {
+    "message": "Selecione de 2 a 4 modos para sua barra principal. O modo URL é obrigatório.",
+    "description": "Hint text explaining the 2-4 mode constraint"
+  },
+  "settingsCreoleLabel": {
+    "message": "🇬🇵 Exibir a extensão em crioulo guadalupeano (Kréyòl)",
+    "description": "Label for Creole toggle checkbox in settings"
+  },
+  "btnPdfRich": {
+    "message": "PDF+",
+    "description": "Short label for Rich PDF format button"
+  },
+  "btnPdfRichAriaLabel": {
+    "message": "Formato PDF rico com imagens e código",
+    "description": "Accessible label for Rich PDF button"
+  },
+  "btnPdfRichTitle": {
+    "message": "PDF completo com imagens integradas, tabelas e blocos de código",
+    "description": "Tooltip for Rich PDF button"
+  },
+  "btnPdfImages": {
+    "message": "PDF Img",
+    "description": "Short label for Image PDF format button"
+  },
+  "btnPdfImagesAriaLabel": {
+    "message": "Formato PDF visual de página inteira",
+    "description": "Accessible label for Image PDF button"
+  },
+  "btnPdfImagesTitle": {
+    "message": "Captura visual de página inteira dividida em páginas PDF",
+    "description": "Tooltip for Image PDF button"
+  },
+  "btnMdRich": {
+    "message": "MD+",
+    "description": "Short label for Rich Markdown format button"
+  },
+  "btnMdRichAriaLabel": {
+    "message": "Formato Markdown rico com links e imagens",
+    "description": "Accessible label for Rich Markdown button"
+  },
+  "btnMdRichTitle": {
+    "message": "Markdown enriquecido (negrito, itálico, links, imagens e tabelas)",
+    "description": "Tooltip for Rich Markdown button"
+  },
+  "btnScreenshotFull": {
+    "message": "Página",
+    "description": "Short label for Full-Page screenshot format button"
+  },
+  "btnScreenshotFullAriaLabel": {
+    "message": "Captura de tela PNG da página inteira",
+    "description": "Accessible label for Full-Page screenshot button"
+  },
+  "btnScreenshotFullTitle": {
+    "message": "Capturar toda a página como PNG",
+    "description": "Tooltip for Full-Page screenshot button"
+  },
+  "modePdfName": {
+    "message": "PDF (Simples)",
+    "description": "Setting checkbox name for Simple PDF"
+  },
+  "modePdfDesc": {
+    "message": "Texto e tabelas estruturadas, sem imagens",
+    "description": "Setting checkbox description for Simple PDF"
+  },
+  "modePdfRichName": {
+    "message": "PDF Rico (PDF+)",
+    "description": "Setting checkbox name for Rich PDF"
+  },
+  "modePdfRichDesc": {
+    "message": "Imagens integradas, tabelas, citações e blocos de código",
+    "description": "Setting checkbox description for Rich PDF"
+  },
+  "modePdfImagesName": {
+    "message": "PDF Imagens (Página inteira)",
+    "description": "Setting checkbox name for Image PDF"
+  },
+  "modePdfImagesDesc": {
+    "message": "Captura visual da página dividida em páginas PDF",
+    "description": "Setting checkbox description for Image PDF"
+  },
+  "modeMdName": {
+    "message": "Markdown (Simples)",
+    "description": "Setting checkbox name for Simple Markdown"
+  },
+  "modeMdDesc": {
+    "message": "Texto ultraleve e tabelas pipe-delimited",
+    "description": "Setting checkbox description for Simple Markdown"
+  },
+  "modeMdRichName": {
+    "message": "Markdown Rico (MD+)",
+    "description": "Setting checkbox name for Rich Markdown"
+  },
+  "modeMdRichDesc": {
+    "message": "Negrito, itálico, links, imagens e tabelas",
+    "description": "Setting checkbox description for Rich Markdown"
+  },
+  "modeUrlName": {
+    "message": "URL / YouTube / Drive",
+    "description": "Setting checkbox name for URL mode"
+  },
+  "modeUrlDesc": {
+    "message": "Importação direta por link, YouTube ou Google Drive (obrigatório)",
+    "description": "Setting checkbox description for URL mode"
+  },
+  "modeScreenshotName": {
+    "message": "Captura de tela visível",
+    "description": "Setting checkbox name for visible screenshot"
+  },
+  "modeScreenshotDesc": {
+    "message": "Captura apenas a área visível em PNG",
+    "description": "Setting checkbox description for visible screenshot"
+  },
+  "modeScreenshotFullName": {
+    "message": "Captura da página inteira",
+    "description": "Setting checkbox name for full page screenshot"
+  },
+  "modeScreenshotFullDesc": {
+    "message": "Captura toda a página com rolagem em PNG",
+    "description": "Setting checkbox description for full page screenshot"
+  }
+}
