@@ -32,7 +32,7 @@
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
-    "message": "Markdown",
+    "message": "MD",
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
@@ -48,7 +48,7 @@
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
-    "message": "Screenshot",
+    "message": "Pantalla",
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
@@ -334,7 +334,7 @@
     "message": "Crear un cuaderno nuevo"
   },
   "btnPdfTitle": {
-    "message": "Imágenes integradas, diseño visual"
+    "message": "Texto y tablas estructuradas, sin imágenes"
   },
   "btnMarkdownTitle": {
     "message": "Tablas perfectas, ultraligero, nativo para Gemini"

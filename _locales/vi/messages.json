@@ -32,7 +32,7 @@
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
-    "message": "Markdown",
+    "message": "MD",
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
@@ -48,7 +48,7 @@
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
-    "message": "Ảnh chụp màn hình",
+    "message": "Màn hình",
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
@@ -334,7 +334,7 @@
     "message": "Tạo sổ tay mới"
   },
   "btnPdfTitle": {
-    "message": "Hình ảnh nhúng, bố cục trực quan"
+    "message": "Văn bản và bảng biểu có cấu trúc, không kèm ảnh"
   },
   "btnMarkdownTitle": {
     "message": "Bảng hoàn hảo, siêu nhẹ, nguyên bản cho Gemini"

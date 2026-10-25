@@ -15,7 +15,7 @@
     <div class="header-right" style="display: flex; align-items: center; gap: 6px;">
       <select id="account-switcher" class="hidden" title="Changer de compte Google" data-i18n-title="popupTitleAccountSwitcher" data-i18n-aria-label="popupTitleAccountSwitcher"></select>
       <div id="auth-status" class="status-badge status-loading" role="status" aria-live="polite" data-i18n="statusConnecting">Connexion...</div>
-      <button id="btn-settings" class="settings-btn" type="button" title="Paramètres" data-i18n-title="btnSettingsTitle" data-i18n-aria-label="btnSettingsTitle">
+      <button id="btn-settings" class="settings-btn" type="button" aria-expanded="false" aria-controls="settings-panel" title="Paramètres" data-i18n-title="btnSettingsTitle" data-i18n-aria-label="btnSettingsTitle">
         <span class="ui-icon icon-settings" aria-hidden="true"></span>
       </button>
     </div>
@@ -31,13 +31,13 @@
       <button id="btn-settings-back" class="settings-back-btn" type="button" data-i18n="btnSettingsBack">← Retour</button>
     </div>
 
-    <div class="settings-block">
+    <div class="settings-block settings-modes-block">
       <div class="settings-block-header">
-        <span class="settings-block-title" data-i18n="settingsModesTitle">Modes affichés</span>
+        <span id="settings-modes-title" class="settings-block-title" data-i18n="settingsModesTitle">Modes affichés</span>
         <span id="settings-modes-counter" class="settings-counter">4 / 4</span>
       </div>
       <p class="settings-hint" data-i18n="settingsModesHint">Choisis de 2 à 4 modes à afficher sur la barre principale (URL obligatoire).</p>
-      <div id="settings-modes-list" class="settings-modes-list" role="group" aria-labelledby="settings-title"></div>
+      <div id="settings-modes-list" class="settings-modes-list" role="group" aria-labelledby="settings-modes-title"></div>
     </div>
 
     <div class="settings-block settings-lang-block">
@@ -94,6 +94,7 @@
         </button>
         <button class="format-btn" aria-pressed="false" data-format="screenshot" title="Capture la zone visible de l'écran en PNG" data-i18n-aria-label="btnScreenshotAriaLabel" data-i18n-title="btnScreenshotTitle">
           <span class="ui-icon icon-screenshot" aria-hidden="true"></span>
+          <span data-i18n="btnScreenshot">Écran</span>
         </button>
         <button class="format-btn" aria-pressed="false" data-format="screenshot_full" title="Capture la page entière en PNG" data-i18n-aria-label="btnScreenshotFullAriaLabel" data-i18n-title="btnScreenshotFullTitle">
           <span class="ui-icon icon-screenshot-full" aria-hidden="true"></span>
@@ -141,7 +142,7 @@
       </div>
       <button id="btn-capture" class="btn primary-btn" disabled>
         <span class="btn-text" data-i18n="popupTitleCapture">Capturer la page</span>
-        <span id="btn-spinner" class="spinner hidden"></span>
+        <span id="btn-spinner" class="spinner hidden" aria-hidden="true"></span>
       </button>
     </section>
 

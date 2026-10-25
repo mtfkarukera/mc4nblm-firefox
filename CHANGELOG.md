@@ -4,20 +4,29 @@ Toutes les modifications majeures apportées au projet **Magic Clipper for Gemin
 
 ---
 
-## [v6.3.1] — 2026-10-25
+## [v6.3.2] — 2026-10-26
 
-### ✨ Nouveautés — Panneau Paramètres (⚙️), Barre Personnalisable (2 à 4 modes), Captures Pleine Page & Localisation Portugaise
-- **Panneau Paramètres intégré (`⚙️`)** : Déplacement du sélecteur de langue Créole Guadeloupéen (`Kréyòl`) depuis l'en-tête de la popup vers une vue Paramètres dédiée, épurant l'en-tête principal.
-- **Barre d'outils personnalisable (2 à 4 modes parmi 8)** : L'utilisateur peut désormais choisir librement entre 2 et 4 modes d'import à afficher sur la popup (avec sauvegarde persistante dans `browser.storage.local` et verrouillage de sécurité sur le mode `🔗 URL / YouTube / Drive`).
-- **Nouveaux modes PDF (`📄 PDF Simple`, `📑 PDF+ Riche`, `🖼️ PDF Images`)** :
-  - `pdf` : PDF textuel et tabulaire rapide sans images.
-  - `pdf_rich` (actif par défaut) : Moteur PDF complet avec images Base64, tableaux `flattenTable()`, blocs de code sur fond gris et citations (`blockquote`) avec filet vertical.
-  - `pdf_images` : Capture visuelle de la page entière découpée en tranches A4 assemblées dans un document PDF avec en-tête de Grounding IA (idéal pour conserver le rendu visuel exact tout en contournant le filtre *Vision Safety* de Google sur les images PNG autonomes).
-- **Nouveau mode Markdown Riche (`✨ MD+`)** : Enrichissement non-destructif de `md_generator.js` préservant le gras (`**`), l'italique (`*`), le code inline (`` ` ``), les liens hypertextes `[texte](url)` et les images `![alt](url)` en plus des tableaux *pipe-delimited*.
-- **Nouveau mode Capture Page Entière (`📜 Page`)** : Capture PNG de l'intégralité de la page défilante via l'API native Firefox `browser.tabs.captureVisibleTab(..., { rect, scale })` avec plafonnement automatique des textures WebRender (`16 380 px`) et repli transparent sur le viewport.
-- **Icônes Vectorielles SVG Adaptatives Jour / Nuit (`icons/ui/*.svg`)** : Remplacement des emojis par 14 fichiers SVG vectoriels dédiés (`pdf.svg`, `pdf-rich.svg`, `pdf-images.svg`, `md.svg`, `md-rich.svg`, `url.svg`, `screenshot.svg`, `screenshot-full.svg`, `drive.svg`, `direct.svg`, `settings.svg`, `lock.svg`, `close.svg`, `selection.svg`) pilotés via CSS `mask-image` et `background-color: currentColor` pour s'adapter automatiquement aux thèmes Clair/Sombre ainsi qu'aux états `:hover` et `.active`.
-- **Localisation Portugaise (`pt`)** : Intégration complète de la langue portugaise (`_locales/pt/messages.json`, 150 clés à 100 %) portant le support multilingue natif à 7 langues (EN, FR, DE, ES, PT, VI, GCF), et intégration de la fiche de store en portugais dans le kit de soumission AMO.
-- **Garde-fou de Build (`tools/check-rpc-contract.js`)** : Vérification statique automatisée lors de `./build.sh` garantissant l'invariance du protocole Scotty (`notebook.google.com`, headers étapes 2 et 3), la préservation de `flattenTable`/`_tryReadability` et l'absence de `DEBUG = true`.
+### 🛡️ Audit Complet (`/code-audit`) — Sécurité, Robustesse, Accessibilité WCAG AA & Finitions
+- **Sécurité IPC & Anti-SSRF (`background.js`, `detection.js`, `rpc_client.js`, `popup.js`)** :
+  - Ajout de `DETECT_FILE_TYPE` et `DETECT_MIME` à `POPUP_ONLY_ACTIONS`, avec `credentials: 'omit'` et filtrage anti-SSRF étendu (`127.0.0.0/8`, `0.0.0.0`, `[::]`, IPv6 `fe80::/10`, `fc00::/7`, `::ffff:0:0/96`) y compris après redirection HTTP dans `FETCH_IMAGE`.
+  - Validation stricte de `x-goog-upload-url` (`https://notebook.google.com/`) et du préfixe `data:application/pdf` dans `rpc_client.js`.
+  - Filtrage `if (sender && sender.tab) return;` dans la popup et validation d'origine sur `linkUrl`.
+- **Moteur Markdown+ (`✨ MD+`) & Lecteur de Sources Gemini Notebook (`md_generator.js`)** :
+  - En mode `✨ MD+` (`md_rich`), ajout d'une légende cliquable `*[🖼️ alt](url)*` sous chaque balise standard `![alt](url)` afin que le lecteur de sources de Gemini Notebook (qui filtre les balises `<img>`) affiche un lien bleu cliquable et indexe le texte alternatif de chaque illustration dans ses réponses.
+- **Robustesse des Moteurs PDF & Mémoire (`serializer.js`, `pdf_generator.js`, `background.js`, `popup.js`)** :
+  - Détection intrinsèque du format (`PNG`/`JPEG`/`WEBP`) et des dimensions d'images via `doc.getImageProperties()` dans `pdf_generator.js` pour préserver le ratio d'aspect exact, et filtrage de `validSlices` dans `generateFromImageSlices()` pour éviter toute page blanche finale.
+  - Support du fallback lazy-load `data-src` et concurrence bornée par lots de 6 dans `_protectTaintedCanvas()` (`serializer.js`), plus libération immédiate de `slices.length = 0` dans `handlePdfImages()`.
+  - Réinitialisation complète de l'état UI du mode sélection (`clearSelectionState`) après import réussi dans `popup.js`.
+  - Qualification automatique des erreurs RPC vers `"errorApiChanged"` / `"API_CHANGED"` via `errorResponse` dans `background.js`.
+- **Accessibilité WCAG 2.1 AA & Design UX (`popup.html`, `popup.css`, `_locales/*/messages.json`)** :
+  - Préservation du focus clavier dans `renderSettingsModesList(focusedModeId)`, attributs `aria-expanded` / `aria-controls` / `aria-labelledby`, fermeture par `Escape`, anneaux `:focus-visible` internes adaptés aux conteneurs arrondis et contrastes Light Mode renforcés (`#137333`, `#bf360c`, `#1557b0`).
+  - Zone `.settings-modes-list` scrollable avec en-tête fixe, retour à la ligne sur `.settings-mode-desc`, et harmonisation des libellés courts (`MD`, `Écran`/`Screen`/`Bild`/`Pantalla`/`Tela`/`Màn hình`/`Ékran`) et info-bulles (`btnPdfTitle`) dans les 7 langues.
+- **Sémantique Documentaire & Anti-Faux Positifs (`README.md`, `submission_kit.md`, `AGENTS.md`)** :
+  - Éradication intégrale des termes de « contournement » au profit de la « réduction des faux positifs d'ingestion » sur les images brutes, et documentation pédagogique de la politique de sécurité globale de Google.
+
+---
+
+## [v6.3.1] — 2026-10-25
 
 ---
 

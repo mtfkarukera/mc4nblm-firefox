@@ -32,7 +32,7 @@
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
-    "message": "Markdown",
+    "message": "MD",
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
@@ -48,7 +48,7 @@
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
-    "message": "Screenshot",
+    "message": "Ékran",
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
@@ -334,7 +334,7 @@
     "message": "Kréyé an nouvo kayé"
   },
   "btnPdfTitle": {
-    "message": "Imaj andidan, dispozisyon vizyèl"
+    "message": "Tèks é tablo striktiré, san zimaj"
   },
   "btnMarkdownTitle": {
     "message": "Tab parfè, byen léjé, natif-natal pou Gemini"

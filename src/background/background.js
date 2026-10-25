@@ -2,21 +2,26 @@
 import { getPersonalAuthCookies, fetchCSRFToken } from './api/auth_personal.js';
 import { createPersonalNotebook, uploadPersonalSource, addTextSource, addUrlSource, addYouTubeSource, addDriveSource, RpcApiChangedError } from './api/rpc_client.js';
 import { INJECTION_PIPELINE, INJECTION_SENTINELS, InjectionError, isScriptInjected, injectScriptsSequentially } from './injection.js';
-import { BINARY_MIME_PREFIXES, DIRECT_IMPORT_TYPES, guessMimeFromTitle, detectFileType } from './detection.js';
+import { BINARY_MIME_PREFIXES, DIRECT_IMPORT_TYPES, guessMimeFromTitle, detectFileType, isLocalOrPrivateHost } from './detection.js';
 import { isCapturing, setCapturing, saveCapture, getCapture, clearCapture } from './capture_store.js';
-import { uploadFileBlob, extractFirstStringFromResult } from './upload.js';
+import { uploadFileBlob } from './upload.js';
 import { getActiveAuthuser, base64ToUint8Array, buildNotebookUrl } from '../shared/utils.js';
 
 /**
  * Construit une réponse d'erreur normalisée pour sendResponse().
- * @param {string} i18nKey  - Clé i18n du message d'erreur.
- * @param {string} [code]   - Code machine optionnel.
- * @param {string} [detail] - Détail technique (logé mais jamais exposé).
- * @returns {{ status: 'error', i18nKey: string, code?: string }}
+ * Qualifie automatiquement les erreurs RpcApiChangedError vers "errorApiChanged" / "API_CHANGED".
+ * @param {string} defaultI18nKey - Clé i18n de repli.
+ * @param {string} [defaultCode]  - Code machine de repli (ex: "UNKNOWN").
+ * @param {Error|string} [errOrDetail] - Objet Error ou détail technique (masqué avant journalisation).
+ * @returns {{ status: 'error', i18nKey: string, code: string }}
  */
-function errorResponse(i18nKey, code, detail) {
+function errorResponse(defaultI18nKey, defaultCode = "UNKNOWN", errOrDetail = null) {
+    const isApiChanged = errOrDetail instanceof RpcApiChangedError;
+    const i18nKey = isApiChanged ? "errorApiChanged" : defaultI18nKey;
+    const code = isApiChanged ? "API_CHANGED" : defaultCode;
+    const detail = errOrDetail?.message || errOrDetail;
     if (detail) console.error('[MC] Error:', sanitizeErrorMessage(String(detail)));
-    return { status: 'error', i18nKey, ...(code ? { code } : {}) };
+    return { status: 'error', i18nKey, code };
 }
 
 /**
@@ -138,33 +143,10 @@ if (browser.contextMenus?.onClicked) {
  * @param  {Function} sendResponse - Callback Firefox pour la réponse synchrone.
  * @returns {true}               - Indique systématiquement une réponse asynchrone.
  */
-/**
- * Vérifie si une URL cible une adresse locale, loopback ou une plage IP privée (protection SSRF).
- * @param {string} urlStr - URL à analyser.
- * @returns {boolean} true si l'hôte est local ou privé.
- */
-function isLocalOrPrivateHost(urlStr) {
-    try {
-        const u = new URL(urlStr);
-        const host = u.hostname.toLowerCase();
-        if (host === 'localhost' || host.endsWith('.local') || host === '127.0.0.1' || host === '::1' || host === '[::1]') {
-            return true;
-        }
-        if (/^10\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host)) {
-            return true;
-        }
-        if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)) {
-            return true;
-        }
-        return false;
-    } catch {
-        return true;
-    }
-}
-
 const POPUP_ONLY_ACTIONS = new Set([
     "GET_AUTH_STATUS", "GET_ACCOUNTS", "SET_ACCOUNT", 
-    "GET_NOTEBOOKS", "CREATE_NOTEBOOK", "START_CAPTURE", "DOWNLOAD_CAPTURE"
+    "GET_NOTEBOOKS", "CREATE_NOTEBOOK", "START_CAPTURE", "DOWNLOAD_CAPTURE",
+    "DETECT_FILE_TYPE", "DETECT_MIME"
 ]);
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -231,7 +213,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 sendResponse({ notebooks });
             } catch (err) {
-                sendResponse(errorResponse("errGetNotebooks", "UNKNOWN", err.message));
+                sendResponse(errorResponse("errGetNotebooks", "UNKNOWN", err));
             }
         })();
         return true;
@@ -249,7 +231,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 const notebookId = await createPersonalNotebook(message.title, activeIndex);
                 sendResponse({ notebookId });
             } catch (err) {
-                sendResponse(errorResponse("errCreateNotebook", "UNKNOWN", err.message));
+                sendResponse(errorResponse("errCreateNotebook", "UNKNOWN", err));
             }
         })();
         return true;
@@ -265,9 +247,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return;
             }
             try {
-                // Sécurité (SEC-1) : credentials omit pour ne pas envoyer les cookies vers des serveurs tiers
+                // Sécurité (SEC-1 & MIN-SEC-1) : credentials omit + vérification anti-redirection SSRF
                 const resp = await fetch(url, { credentials: 'omit', signal: AbortSignal.timeout(10_000) });
                 if (!resp.ok) { sendResponse({ error: `HTTP ${resp.status}` }); return; }
+                if (resp.url && isLocalOrPrivateHost(resp.url)) {
+                    sendResponse({ error: 'Redirection vers une adresse locale ou privée rejetée.' });
+                    return;
+                }
                 const contentType = resp.headers.get('content-type') || '';
                 if (!contentType.toLowerCase().startsWith('image/')) {
                     sendResponse({ error: 'Ressource non-image rejetée (Content-Type invalide).' });
@@ -294,6 +280,18 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return;
             }
             let blobUrl = null;
+            let downloadId = null;
+            let completedImmediate = false;
+            const onChanged = (delta) => {
+                if (downloadId === null || delta.id !== downloadId) return;
+                if (delta.state && (delta.state.current === 'complete' || delta.state.current === 'interrupted')) {
+                    if (blobUrl) {
+                        try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+                        blobUrl = null;
+                    }
+                    browser.downloads.onChanged.removeListener(onChanged);
+                }
+            };
             try {
                 let ext;
 
@@ -312,29 +310,31 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 const platformInfo = await browser.runtime.getPlatformInfo();
                 const isMobile = platformInfo.os === 'android';
 
-                const downloadId = await browser.downloads.download({
+                // MIN-ROB-1 : Enregistrer le listener AVANT download() pour éviter toute race condition sur un Blob local
+                browser.downloads.onChanged.addListener(onChanged);
+
+                downloadId = await browser.downloads.download({
                     url: blobUrl,
                     filename: (capture.filename || 'capture') + ext,
                     saveAs: !isMobile
                 });
 
-                // Révoquer l'URL dès que le téléchargement est terminé (ou échoue)
-                const onChanged = (delta) => {
-                    if (delta.id !== downloadId) return;
-                    if (delta.state && (delta.state.current === 'complete' || delta.state.current === 'interrupted')) {
-                        if (blobUrl) {
-                            try { URL.revokeObjectURL(blobUrl); } catch (_) {}
-                        }
-                        browser.downloads.onChanged.removeListener(onChanged);
+                // Vérifier si le téléchargement s'est déjà terminé pendant la résolution de download()
+                const items = await browser.downloads.search({ id: downloadId });
+                if (items && items[0] && (items[0].state === 'complete' || items[0].state === 'interrupted')) {
+                    completedImmediate = true;
+                    if (blobUrl) {
+                        try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+                        blobUrl = null;
                     }
-                };
-                browser.downloads.onChanged.addListener(onChanged);
-                // ROB-3 : pas de setTimeout — le listener onChanged gère le nettoyage
+                    browser.downloads.onChanged.removeListener(onChanged);
+                }
 
                 sendResponse({ ok: true });
             } catch (err) {
+                browser.downloads.onChanged.removeListener(onChanged);
                 // MIN-ROB-1 : Révoquer le Blob URL en cas d'échec immédiat
-                if (blobUrl) {
+                if (blobUrl && !completedImmediate) {
                     try { URL.revokeObjectURL(blobUrl); } catch (_) {}
                 }
                 sendResponse({ error: err.message });
@@ -356,12 +356,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "DETECT_MIME") {
         (async () => {
             const { url } = message;
+            if (!url || !(/^https?:\/\//i.test(url)) || isLocalOrPrivateHost(url)) {
+                sendResponse({ isBinary: false, mime: '' });
+                return;
+            }
             try {
                 const resp = await fetch(url, {
                     method: 'HEAD',
+                    credentials: 'omit',
                     signal: AbortSignal.timeout(5000)
                 });
-                if (!resp.ok) {
+                if (!resp.ok || (resp.url && isLocalOrPrivateHost(resp.url))) {
                     sendResponse({ isBinary: false, mime: '' });
                     return;
                 }
@@ -449,14 +454,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // BLQ-ROB-1 : Résolution de la promesse popup
                     sendResponse({ status: "success" });
                 } catch (err) {
-                    console.error('[MC] Pipeline SELECTION:', sanitizeErrorMessage(err.message));
+                    const isApiChanged = err instanceof RpcApiChangedError;
                     notifyUI("STATUS_UPDATE", {
                         status: "error",
-                        i18nKey: "errSelectionFailed",
-                        code: "UNKNOWN"
+                        i18nKey: isApiChanged ? "errorApiChanged" : "errSelectionFailed",
+                        code: isApiChanged ? "API_CHANGED" : "UNKNOWN"
                     });
                     // BLQ-ROB-1 : Résolution d'erreur pour débloquer la promesse popup
-                    sendResponse(errorResponse("errSelectionFailed", "UNKNOWN", err.message));
+                    sendResponse(errorResponse("errSelectionFailed", "UNKNOWN", err));
                 } finally {
                     setCapturing(false);
                 }
@@ -502,29 +507,34 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         sendResponse({ status: "success" });
                     })
                     .catch(err => {
-                        console.error('[MC] Pipeline WORKFLOW:', sanitizeErrorMessage(err.message));
+                        const isApiChanged = err instanceof RpcApiChangedError;
                         notifyUI("STATUS_UPDATE", {
                             status: "error",
-                            i18nKey: "errWorkflowFailed",
-                            code: "UNKNOWN"
+                            i18nKey: isApiChanged ? "errorApiChanged" : "errWorkflowFailed",
+                            code: isApiChanged ? "API_CHANGED" : "UNKNOWN"
                         });
                         // BLQ-ROB-1 : Résolution d'erreur pour débloquer la promesse popup
-                        sendResponse(errorResponse("errWorkflowFailed", "UNKNOWN", err.message));
+                        sendResponse(errorResponse("errWorkflowFailed", "UNKNOWN", err));
                     })
                     .finally(() => {
                         setCapturing(false);
                     });
             })().catch(err => {
                 setCapturing(false);
-                console.error('[MC] START_CAPTURE IIFE:', sanitizeErrorMessage(err.message));
-                notifyUI("STATUS_UPDATE", { status: "error", i18nKey: "errWorkflowFailed", code: "UNKNOWN" });
+                const isApiChanged = err instanceof RpcApiChangedError;
+                notifyUI("STATUS_UPDATE", {
+                    status: "error",
+                    i18nKey: isApiChanged ? "errorApiChanged" : "errWorkflowFailed",
+                    code: isApiChanged ? "API_CHANGED" : "UNKNOWN"
+                });
                 // BLQ-ROB-1 : Résolution de secours
-                sendResponse(errorResponse("errWorkflowFailed", "UNKNOWN", err.message));
+                sendResponse(errorResponse("errWorkflowFailed", "UNKNOWN", err));
             });
         }
+        return true;
     }
 
-    return true;
+    return false;
 });
 
 /**
@@ -739,8 +749,8 @@ async function handleScreenshotFull(ctx) {
  * Handler format "pdf_images" : capture la page complète en tranches verticales PNG
  * aux proportions A4, les assemble dans un document PDF multi-pages via jsPDF
  * (avec en-tête de Grounding IA et Intent Note), puis l'uploade comme source PDF.
- * Ce mode préserve le rendu visuel exact de la page tout en contournant le filtre
- * Vision Safety appliqué par Google aux images autonomes.
+ * Ce mode préserve le rendu visuel exact de la page tout en limitant les faux positifs
+ * d'ingestion appliqués par Google aux images autonomes.
  *
  * @param {Object} ctx - Contexte buildCaptureContext().
  */
@@ -807,6 +817,9 @@ async function handlePdfImages(ctx) {
             intentHeader:     browser.i18n.getMessage('intentHeader')
         }
     });
+
+    // MIN-ROB-1 : Libérer immédiatement les tranches PNG Base64 (15-60 Mo) dès la génération terminée
+    slices.length = 0;
 
     if (response?.status !== "SUCCESS") {
         throw new Error("Erreur génération PDF Images : " + (response?.error || "inconnue"));

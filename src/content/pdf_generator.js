@@ -254,7 +254,11 @@ window.ClipperPDFGenerator = {
           doc.setFont('helvetica', 'normal');
           doc.setTextColor(26, 115, 232);
           space(5);
-          doc.textWithLink(block.text, m, y, { url: block.text });
+          if (/^https?:\/\//i.test(block.text)) {
+            doc.textWithLink(block.text, m, y, { url: block.text });
+          } else {
+            doc.text(block.text, m, y);
+          }
           y += 6;
           addRule();
           break;
@@ -279,16 +283,39 @@ window.ClipperPDFGenerator = {
         case 'image': {
           if (!block.data) break;
           try {
-            const imgW = block.width || 400;
-            const imgH = block.height || 300;
+            let imgW = block.width || 0;
+            let imgH = block.height || 0;
+            let imgFormat = 'JPEG';
+            if (block.data.startsWith('data:image/png')) imgFormat = 'PNG';
+            else if (block.data.startsWith('data:image/webp')) imgFormat = 'WEBP';
+
+            try {
+              const props = doc.getImageProperties(block.data);
+              if (props) {
+                if (props.fileType) imgFormat = props.fileType;
+                if ((!imgW || !imgH) && props.width > 0 && props.height > 0) {
+                  imgW = props.width;
+                  imgH = props.height;
+                }
+              }
+            } catch {
+              // Fallback silencieux si getImageProperties ne reconnaît pas l'en-tête binaire
+            }
+
+            if (!imgW || imgW <= 0) imgW = 400;
+            if (!imgH || imgH <= 0) imgH = 300;
+
             const maxW = uw;
             const maxH = ph - m * 2 - 10;
-            const ratio = Math.min(maxW / imgW, maxH / imgH, 1);
-            const fw = imgW * ratio;
-            const fh = imgH * ratio;
+            // Conversion px -> mm approximative (1 px ≈ 0.264583 mm) plafonnée à la zone utile
+            const targetW = Math.min(imgW * 0.264583, maxW);
+            const targetH = targetW * (imgH / imgW);
+            const ratio = targetH > maxH ? (maxH / targetH) : 1;
+            const fw = targetW * ratio;
+            const fh = targetH * ratio;
             space(fh + 5);
             const xOff = m + (uw - fw) / 2;
-            doc.addImage(block.data, 'JPEG', xOff, y, fw, fh);
+            doc.addImage(block.data, imgFormat, xOff, y, fw, fh);
             y += fh + 5;
           } catch (e) {
             console.warn('[MC] Image ignorée:', e.message);
@@ -419,7 +446,11 @@ window.ClipperPDFGenerator = {
       doc.setFontSize(8.5);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(26, 115, 232);
-      doc.textWithLink(metadata.url, m, y, { url: metadata.url });
+      if (/^https?:\/\//i.test(metadata.url)) {
+        doc.textWithLink(metadata.url, m, y, { url: metadata.url });
+      } else {
+        doc.text(metadata.url, m, y);
+      }
       y += 5;
     }
 
@@ -427,10 +458,10 @@ window.ClipperPDFGenerator = {
     doc.line(m, y, pw - m, y);
     y += 4;
 
-    // 3. Placement des tranches PNG sur les pages A4
-    for (let i = 0; i < slices.length; i++) {
-      const slice = slices[i];
-      if (!slice || !slice.dataUrl) continue;
+    // 3. Placement des tranches PNG valides sur les pages A4 (zéro page blanche finale)
+    const validSlices = (slices || []).filter(s => s && s.dataUrl);
+    for (let i = 0; i < validSlices.length; i++) {
+      const slice = validSlices[i];
 
       const availH = ph - y - m;
       const ratio = slice.height / Math.max(slice.width, 1);
@@ -438,23 +469,16 @@ window.ClipperPDFGenerator = {
       let drawH = drawW * ratio;
 
       if (drawH > availH) {
-        if (i > 0 && y > m + 5) {
-          doc.addPage();
-          y = m;
-        }
-        const maxPageH = ph - y - m;
-        if (drawH > maxPageH) {
-          const scaleFactor = maxPageH / drawH;
-          drawH = maxPageH;
-          drawW = drawW * scaleFactor;
-        }
+        const scaleFactor = availH / drawH;
+        drawH = availH;
+        drawW = drawW * scaleFactor;
       }
 
       const xOff = m + (uw - drawW) / 2;
       doc.addImage(slice.dataUrl, 'PNG', xOff, y, drawW, drawH);
       y += drawH + 2;
 
-      if (i < slices.length - 1) {
+      if (i < validSlices.length - 1) {
         doc.addPage();
         y = m;
       }
@@ -601,8 +625,8 @@ window.ClipperPDFGenerator = {
       if (tag === 'img') {
         const src = node.getAttribute('src') || '';
         if (src.startsWith('data:')) {
-          const w = parseInt(node.getAttribute('width'), 10) || node.naturalWidth || 400;
-          const h = parseInt(node.getAttribute('height'), 10) || node.naturalHeight || 300;
+          const w = parseInt(node.getAttribute('width'), 10) || node.naturalWidth || 0;
+          const h = parseInt(node.getAttribute('height'), 10) || node.naturalHeight || 0;
           blocks.push({ type: 'image', data: src, width: w, height: h });
         }
         return;

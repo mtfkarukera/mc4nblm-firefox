@@ -32,7 +32,7 @@
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
-    "message": "Markdown",
+    "message": "MD",
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
@@ -48,7 +48,7 @@
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
-    "message": "Capture d'écran",
+    "message": "Écran",
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
@@ -334,7 +334,7 @@
     "message": "Créer un nouveau carnet"
   },
   "btnPdfTitle": {
-    "message": "Images intégrées, mise en page visuelle"
+    "message": "Texte et tableaux structurés, sans images"
   },
   "btnMarkdownTitle": {
     "message": "Tables parfaites, ultra-léger, natif Gemini"

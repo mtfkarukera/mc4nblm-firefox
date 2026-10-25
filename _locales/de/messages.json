@@ -32,7 +32,7 @@
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
-    "message": "Markdown",
+    "message": "MD",
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
@@ -48,7 +48,7 @@
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
-    "message": "Screenshot",
+    "message": "Bild",
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
@@ -334,7 +334,7 @@
     "message": "Neues Notizbuch erstellen"
   },
   "btnPdfTitle": {
-    "message": "Eingebettete Bilder, visuelles Layout"
+    "message": "Strukturierter Text und Tabellen, ohne Bilder"
   },
   "btnMarkdownTitle": {
     "message": "Perfekte Tabellen, ultraleicht, nativ für Gemini"

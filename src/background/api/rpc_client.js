@@ -673,8 +673,8 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
     }
 
     const uploadUrl = startResponse.headers.get('x-goog-upload-url');
-    if (!uploadUrl) {
-        throw new Error("Échec: pas de x-goog-upload-url dans la réponse du serveur.");
+    if (!uploadUrl || !uploadUrl.startsWith('https://notebook.google.com/')) {
+        throw new Error("Échec: pas de x-goog-upload-url valide dans la réponse du serveur.");
     }
 
     // ╔════════════════════════════════════════════════════════╗
@@ -721,6 +721,9 @@ export async function uploadBlob(notebookId, blob, filename, authuserIndex = 0) 
  * @throws  {RpcApiChangedError}             - Si la structure RPC de l'étape d'enregistrement a changé.
  */
 export async function uploadPersonalSource(notebookId, pdfDataUri, customTitle = null, authuserIndex = 0) {
+    if (typeof pdfDataUri !== 'string' || !pdfDataUri.startsWith('data:application/pdf')) {
+        throw new Error("Format de source PDF invalide (Data URI attendu).");
+    }
 
     // MAJ-ROB-4 : Conversion Data URI -> Blob native rapide en C++ sans allocation massive atob
     const resp = await fetch(pdfDataUri);

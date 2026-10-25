@@ -155,19 +155,24 @@ window.ClipperSerializer = {
       // Mode PDF Riche : conversion des images distantes en Base64 pour jsPDF addImage()
       await this._protectTaintedCanvas(container);
     } else {
-      // Mode MD Riche : résolution des URLs relatives en URLs absolues propres
+      // Mode MD Riche : résolution des URLs relatives en URLs absolues HTTP(S) propres
       container.querySelectorAll('img').forEach(img => {
-        const src = img.getAttribute('src') || img.getAttribute('data-src') || '';
-        if (!src) {
+        const rawSrc = img.getAttribute('src') || '';
+        const dataSrc = img.getAttribute('data-src') || '';
+        const src = (rawSrc && !rawSrc.startsWith('data:image/gif')) ? rawSrc : (dataSrc || rawSrc);
+        if (!src || src.startsWith('data:')) {
           img.remove();
           return;
         }
-        if (!src.startsWith('data:')) {
-          try {
-            img.setAttribute('src', new URL(src, window.location.href).href);
-          } catch {
+        try {
+          const absUrl = new URL(src, window.location.href).href;
+          if (/^https?:\/\//i.test(absUrl)) {
+            img.setAttribute('src', absUrl);
+          } else {
             img.remove();
           }
+        } catch {
+          img.remove();
         }
       });
     }
@@ -351,22 +356,21 @@ window.ClipperSerializer = {
    * @returns {Promise<void>}         - Résout quand toutes les images sont traitées.
    */
   async _protectTaintedCanvas(container) {
-    const images = container.querySelectorAll('img');
+    const images = Array.from(container.querySelectorAll('img'));
     if (images.length === 0) return;
 
-    let converted = 0;
-    let failed = 0;
+    const processImage = async (img) => {
+      const rawSrc = img.getAttribute('src') || '';
+      const dataSrc = img.getAttribute('data-src') || '';
+      // MIN-ROB-3 : Support du fallback lazy-load data-src si src est vide ou placeholder 1x1 GIF
+      const src = (rawSrc && !rawSrc.startsWith('data:image/gif')) ? rawSrc : (dataSrc || rawSrc);
 
-    const promises = Array.from(images).map(async (img) => {
-      const src = img.getAttribute('src') || '';
-
-      // Déjà un data URI : rien à faire
+      // Déjà un data URI valide : rien à faire
       if (src.startsWith('data:')) return;
 
       // URL vide ou invalide
       if (!src || src.length < 5) {
         img.remove();
-        failed++;
         return;
       }
 
@@ -376,7 +380,6 @@ window.ClipperSerializer = {
         absoluteUrl = new URL(src, window.location.href).href;
       } catch {
         img.remove();
-        failed++;
         return;
       }
 
@@ -392,19 +395,21 @@ window.ClipperSerializer = {
           img.removeAttribute('srcset');
           img.removeAttribute('loading');
           img.removeAttribute('data-src');
-          converted++;
         } else {
           img.remove();
-          failed++;
         }
       } catch (err) {
         console.warn('[MC] Image non convertible:', absoluteUrl, err.message);
         img.remove();
-        failed++;
       }
-    });
+    };
 
-    await Promise.all(promises);
+    // MIN-ROB-3 : Concurrence bornée par lots de 6 pour éviter la saturation mémoire/IPC sur les pages riches
+    const CONCURRENCY_LIMIT = 6;
+    for (let i = 0; i < images.length; i += CONCURRENCY_LIMIT) {
+      const batch = images.slice(i, i + CONCURRENCY_LIMIT);
+      await Promise.all(batch.map(processImage));
+    }
   },
 
   /**

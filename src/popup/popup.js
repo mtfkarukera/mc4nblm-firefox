@@ -217,8 +217,11 @@ function applyUserModePreferences() {
 
 /**
  * Construit dynamiquement la liste des 8 modes dans le panneau Paramètres (zéro innerHTML).
+ * Restaure le focus clavier sur la case modifiée après reconstruction DOM (MAJ-A11Y-1).
+ *
+ * @param {string|null} [focusedModeId=null] - ID du mode dont la case doit conserver le focus.
  */
-function renderSettingsModesList() {
+function renderSettingsModesList(focusedModeId = null) {
   if (!uiSettingsModesList) return;
   uiSettingsModesList.replaceChildren();
 
@@ -269,6 +272,7 @@ function renderSettingsModesList() {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'settings-checkbox';
+    checkbox.dataset.modeId = mode.id;
     checkbox.checked = isChecked;
     checkbox.disabled = isInputDisabled;
 
@@ -294,13 +298,22 @@ function renderSettingsModesList() {
       activeUserModes = nextModes;
       await browser.storage.local.set({ nwc_active_modes: activeUserModes });
       applyUserModePreferences();
-      renderSettingsModesList();
+      renderSettingsModesList(mode.id);
     });
 
     labelRow.appendChild(infoDiv);
     labelRow.appendChild(checkbox);
     uiSettingsModesList.appendChild(labelRow);
   });
+
+  if (focusedModeId) {
+    const targetCheckbox = uiSettingsModesList.querySelector(`input[data-mode-id="${focusedModeId}"]`);
+    if (targetCheckbox && !targetCheckbox.disabled) {
+      targetCheckbox.focus();
+    } else if (btnSettingsBack) {
+      btnSettingsBack.focus();
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -325,26 +338,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyUserModePreferences();
   renderSettingsModesList();
 
+  const openSettingsPanel = () => {
+    renderSettingsModesList();
+    uiMainView.classList.add('hidden');
+    uiSettingsPanel.classList.remove('hidden');
+    btnSettings.setAttribute('aria-expanded', 'true');
+    if (btnSettingsBack) btnSettingsBack.focus();
+  };
+
+  const closeSettingsPanel = () => {
+    uiSettingsPanel.classList.add('hidden');
+    uiMainView.classList.remove('hidden');
+    btnSettings.setAttribute('aria-expanded', 'false');
+    btnSettings.focus();
+  };
+
   if (btnSettings && uiSettingsPanel && uiMainView) {
     btnSettings.addEventListener('click', () => {
       const isSettingsOpen = !uiSettingsPanel.classList.contains('hidden');
       if (isSettingsOpen) {
-        uiSettingsPanel.classList.add('hidden');
-        uiMainView.classList.remove('hidden');
+        closeSettingsPanel();
       } else {
-        renderSettingsModesList();
-        uiMainView.classList.add('hidden');
-        uiSettingsPanel.classList.remove('hidden');
+        openSettingsPanel();
       }
     });
   }
 
   if (btnSettingsBack && uiSettingsPanel && uiMainView) {
     btnSettingsBack.addEventListener('click', () => {
-      uiSettingsPanel.classList.add('hidden');
-      uiMainView.classList.remove('hidden');
+      closeSettingsPanel();
     });
   }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && uiSettingsPanel && !uiSettingsPanel.classList.contains('hidden')) {
+      e.preventDefault();
+      closeSettingsPanel();
+    }
+  });
 
   // Connexion au background pour obtenir l'état et les carnets
   browser.runtime.sendMessage({ action: "GET_AUTH_STATUS" }).then((response) => {
@@ -367,6 +398,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                          selectBox.classList.remove("hidden");
                          selectBox.addEventListener("change", (e) => {
                              const newIndex = parseInt(e.target.value, 10);
+                             currentSelectedNotebookId = null;
+                             btnCapture.disabled = true;
                              browser.runtime.sendMessage({ action: "SET_ACCOUNT", index: newIndex }).then(() => {
                                  loadNotebooks(); // Recharger les carnets
                              });
@@ -394,8 +427,8 @@ document.addEventListener('DOMContentLoaded', async () => {
    uiSearchInput.addEventListener('keydown', (e) => {
      if (e.key === 'ArrowDown') {
        e.preventDefault();
-       const firstItem = uiNotebookList.querySelector('[role="option"]');
-       if (firstItem) firstItem.focus();
+       const targetItem = uiNotebookList.querySelector('[role="option"][tabindex="0"]') || uiNotebookList.querySelector('[role="option"]');
+       if (targetItem) targetItem.focus();
      }
    });
    
@@ -409,13 +442,17 @@ document.addEventListener('DOMContentLoaded', async () => {
      const btn = e.target.closest('.format-btn');
      if (!btn || btn.classList.contains('active') || btn.classList.contains('btn-disabled')) return;
 
-     // Si une sélection est en attente, la cleariser quand l'utilisateur change de format
+     // Si une sélection est en attente, la nettoyer quand l'utilisateur change de format
      if (pendingSelection) {
        browser.storage.local.remove('nwc_pending_selection');
        pendingSelection = null;
        uiSelectionBanner.classList.add('hidden');
        // Réactiver les boutons qui étaient grisés par la sélection
        uiFormatToggle.querySelectorAll('.format-btn').forEach(b => removeFormatBtnDisabled(b));
+       if (btnDirectImport) removeFormatBtnDisabled(btnDirectImport);
+       if (detectedFileInfo && detectedFileInfo.directImport) {
+         applyButtonVisibility(detectedFileInfo);
+       }
      }
 
      // Désélectionner tous les boutons (format toggle + direct)
@@ -437,7 +474,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    // Bouton Import Direct (séparé du toggle principal)
    if (btnDirectImport) {
      btnDirectImport.addEventListener('click', () => {
-       if (btnDirectImport.classList.contains('active')) return;
+       if (btnDirectImport.classList.contains('active') || btnDirectImport.classList.contains('btn-disabled')) return;
        
        // Désélectionner les boutons du toggle principal
        uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
@@ -451,33 +488,41 @@ document.addEventListener('DOMContentLoaded', async () => {
      });
    }
 
+   /**
+    * Réinitialise complètement l'état UI du mode sélection :
+    * purge le stockage, masque le bandeau, réactive les boutons et restaure l'état de l'onglet.
+    */
+   async function clearSelectionState() {
+     await browser.storage.local.remove('nwc_pending_selection');
+     pendingSelection = null;
+     uiSelectionBanner.classList.add('hidden');
+     // Réactiver les boutons qui étaient grisés par la sélection
+     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => removeFormatBtnDisabled(b));
+     if (btnDirectImport) removeFormatBtnDisabled(btnDirectImport);
+     // Restaurer le premier format actif disponible puis réappliquer la détection de l'onglet
+     if (currentFormat === 'selection') {
+       currentFormat = activeUserModes[0] || 'pdf_rich';
+       applyUserModePreferences();
+       const defaultBtn = uiFormatToggle.querySelector(`[data-format="${currentFormat}"]`);
+       if (defaultBtn) {
+         defaultBtn.classList.add('active');
+         defaultBtn.setAttribute('aria-pressed', 'true');
+       }
+       updateCaptureButtonLabel();
+       await detectActiveTabFileType();
+     }
+   }
+
    // Bouton Annuler la sélection
    if (btnClearSelection) {
      btnClearSelection.addEventListener('click', async () => {
-       await browser.storage.local.remove('nwc_pending_selection');
-       pendingSelection = null;
-       uiSelectionBanner.classList.add('hidden');
-       // Réactiver les boutons qui étaient grisés par la sélection
-       uiFormatToggle.querySelectorAll('.format-btn').forEach(b => removeFormatBtnDisabled(b));
-       // Restaurer le premier format actif disponible
-       if (currentFormat === 'selection') {
-         currentFormat = activeUserModes[0] || 'pdf_rich';
-         applyUserModePreferences();
-         const defaultBtn = uiFormatToggle.querySelector(`[data-format="${currentFormat}"]`);
-         if (defaultBtn) {
-           defaultBtn.classList.add('active');
-           defaultBtn.setAttribute('aria-pressed', 'true');
-         }
-         updateCaptureButtonLabel();
-       }
+       await clearSelectionState();
      });
    }
 
-   // Détection du type de fichier pour l'Import Direct
-   detectActiveTabFileType();
-
-   // Vérifier s'il y a une sélection en attente (capturée via le menu contextuel)
-   checkPendingSelection();
+   // MAJ-ROB-1 : Séquencement déterministe — détecter le type d'onglet puis appliquer la sélection éventuelle
+   await detectActiveTabFileType();
+   await checkPendingSelection();
 
    // Compteur d'intention
    if (intentInput && intentCounter) {
@@ -624,7 +669,7 @@ async function createNewNotebook() {
 }
 
 /** Déclenche le processus de capture en envoyant START_CAPTURE au background. */
-function startCaptureProcess() {
+async function startCaptureProcess() {
    if (!currentSelectedNotebookId) {
      updateStatus(t('errNoNotebook'), "error");
      return;
@@ -656,9 +701,8 @@ function startCaptureProcess() {
        }
      }).catch(() => { closeKeepAlivePort(); resetUI(); });
      
-     // Nettoyer la sélection en attente
-     browser.storage.local.remove('nwc_pending_selection');
-     pendingSelection = null;
+     // Nettoyer la sélection en attente et restaurer l'état nominal de l'interface
+     await clearSelectionState();
      return;
    }
 
@@ -741,7 +785,47 @@ async function detectActiveTabFileType() {
      if (tabs.length === 0) return;
 
      const url = tabs[0].url;
+     if (pendingSelection) return;
      const urlBtn = uiFormatToggle.querySelector('[data-format="url"]');
+
+     // 1. Détection prioritaire synchrone Google Drive (avant tout appel réseau DETECT_MIME)
+     if (window.ClipperUtils && window.ClipperUtils.parseDriveUrl) {
+         const driveInfo = window.ClipperUtils.parseDriveUrl(url);
+         if (driveInfo) {
+             const driveBtn = document.getElementById('btn-drive-import');
+             if (driveBtn) {
+                 isDriveExclusiveMode = true;
+                 driveBtn.style.display = 'flex';
+                 driveBtn.classList.remove('hidden');
+
+                 if (driveInfo.typeStr === 'file') {
+                     // Fichier hébergé sur Drive → Drive + Screenshot
+                     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+                          b.classList.remove('active');
+                          b.setAttribute('aria-pressed', 'false');
+                          if ([...PDF_MODES, ...MD_MODES, 'url'].includes(b.dataset.format)) {
+                              b.style.display = 'none';
+                          }
+                      });
+                 } else {
+                     // Google Workspace (Docs/Sheets/Slides) → Drive exclusif
+                     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
+                          b.classList.remove('active');
+                          b.setAttribute('aria-pressed', 'false');
+                          if ([...PDF_MODES, ...MD_MODES, 'url', ...SCREENSHOT_MODES].includes(b.dataset.format)) {
+                              b.style.display = 'none';
+                          }
+                      });
+                 }
+
+                 driveBtn.classList.add("active");
+                 driveBtn.setAttribute('aria-pressed', 'true');
+                 currentFormat = "drive";
+                 updateCaptureButtonLabel();
+                 return;
+             }
+         }
+     }
 
      if (isYouTubeWatch(url)) {
        disableFormatGroup([...PDF_MODES, ...MD_MODES, ...SCREENSHOT_MODES]);
@@ -829,45 +913,6 @@ async function detectActiveTabFileType() {
      } catch (e) {
         console.warn('[MC] DETECT_MIME — requête échouée:', e?.message);
        // Skip silencieux : comportement page web ordinaire
-     }
-
-     // 1. Détection prioritaire Google Drive
-     if (window.ClipperUtils && window.ClipperUtils.parseDriveUrl) {
-         const driveInfo = window.ClipperUtils.parseDriveUrl(url);
-         if (driveInfo) {
-             const driveBtn = document.getElementById('btn-drive-import');
-             if (driveBtn) {
-                 isDriveExclusiveMode = true;
-                 driveBtn.style.display = 'flex';
-                 driveBtn.classList.remove('hidden');
-
-                 if (driveInfo.typeStr === 'file') {
-                     // Fichier hébergé sur Drive → Drive + Screenshot
-                     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
-                          b.classList.remove('active');
-                          b.setAttribute('aria-pressed', 'false');
-                          if ([...PDF_MODES, ...MD_MODES, 'url'].includes(b.dataset.format)) {
-                              b.style.display = 'none';
-                          }
-                      });
-                 } else {
-                     // Google Workspace (Docs/Sheets/Slides) → Drive exclusif
-                     uiFormatToggle.querySelectorAll('.format-btn').forEach(b => {
-                          b.classList.remove('active');
-                          b.setAttribute('aria-pressed', 'false');
-                          if ([...PDF_MODES, ...MD_MODES, 'url', ...SCREENSHOT_MODES].includes(b.dataset.format)) {
-                              b.style.display = 'none';
-                          }
-                      });
-                 }
-
-                  driveBtn.classList.add("active");
-                  driveBtn.setAttribute('aria-pressed', 'true');
-                 currentFormat = "drive";
-                 updateCaptureButtonLabel();
-                 return;
-             }
-         }
      }
 
      // 2. Fallback pour fichiers réguliers via background script
@@ -1005,7 +1050,7 @@ function updateStatus(message, type, linkUrl, showDownload) {
   const displayMessage = (type === 'error') ? `⚠️ ${message}` : message;
   uiStatusMessage.appendChild(document.createTextNode(displayMessage));
   
-  if (linkUrl) {
+  if (typeof linkUrl === 'string' && linkUrl.startsWith('https://notebook.google.com/')) {
     const link = document.createElement('a');
     link.href = linkUrl;
     link.target = '_blank';
@@ -1015,7 +1060,7 @@ function updateStatus(message, type, linkUrl, showDownload) {
   }
   
   if (showDownload) {
-    const ext = MD_MODES.includes(currentFormat) ? ".md" : ".pdf";
+    const ext = (MD_MODES.includes(currentFormat) || currentFormat === 'selection') ? ".md" : ".pdf";
     const dlLink = document.createElement('a');
     dlLink.href = '#';
     dlLink.textContent = ' ' + t('linkDownloadFile').replace('{ext}', ext);
@@ -1053,7 +1098,9 @@ document.getElementById('btn-close').addEventListener('click', () => {
   window.close();
 });
 
-browser.runtime.onMessage.addListener(message => {
+browser.runtime.onMessage.addListener((message, sender) => {
+  // MAJ-SEC-2 : Rejeter tout message émis depuis un content script d'onglet
+  if (sender && sender.tab) return;
   if (message.type === "STATUS_UPDATE") {
     let displayText;
     if (message.i18nKey) {

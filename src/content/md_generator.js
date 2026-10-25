@@ -203,10 +203,15 @@ window.ClipperMarkdownGenerator = {
           break;
 
         case 'image':
-          // En Markdown, on référence l'URL originale (pas le data URI)
-          if (block.alt || block.url) {
+          // En Markdown Riche (md_rich), on émet à la fois la balise image standard ![alt](url)
+          // et une légende cliquable *[🖼️ alt](url)* pour que le lecteur de sources de Gemini
+          // Notebook (qui filtre les balises <img>) affiche le lien cliquable et indexe la légende.
+          if (block.url && /^https?:\/\//i.test(block.url)) {
+            const safeAlt = (block.alt || 'Image').replace(/[\[\]\r\n]+/g, ' ').trim() || 'Image';
+            const safeUrl = block.url.replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\s+/g, '%20');
             lines.push('');
-            lines.push(`![${block.alt || 'Image'}](${block.url || ''})`);
+            lines.push(`![${safeAlt}](${safeUrl})`);
+            lines.push(`*[🖼️ ${safeAlt}](${safeUrl})*`);
             lines.push('');
           }
           break;
@@ -338,7 +343,9 @@ window.ClipperMarkdownGenerator = {
         const href = node.getAttribute('href') || '';
         const trimmed = inner.trim();
         if (trimmed && /^https?:\/\//i.test(href)) {
-          return `[${trimmed}](${href})`;
+          const safeText = trimmed.replace(/[\[\]\r\n]+/g, ' ').trim();
+          const safeHref = href.replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\s+/g, '%20');
+          return `[${safeText}](${safeHref})`;
         }
         return inner;
       }
@@ -400,12 +407,12 @@ window.ClipperMarkdownGenerator = {
         return;
       }
 
-      // Images — conservées uniquement en mode MD Riche (md_rich)
+      // Images — conservées uniquement en mode MD Riche (md_rich) si URL HTTP(S) valide
       if (tag === 'img') {
         if (!isRich) return;
         const src = node.getAttribute('src') || '';
-        const alt = node.getAttribute('alt') || '';
-        if (src && !src.startsWith('data:')) {
+        const alt = node.getAttribute('alt') || node.getAttribute('title') || '';
+        if (src && /^https?:\/\//i.test(src)) {
           blocks.push({ type: 'image', url: src, alt: alt });
         }
         return;

@@ -119,6 +119,45 @@ const EXT_TO_MIME = {
 const SUPPORTED_EXT_REGEX = /\.(pdf|txt|md|docx|csv|pptx|epub|avif|bmp|gif|ico|jp2|png|webp|tif|tiff|heic|heif|jpe?g|3g2|3gp|aac|aif|aifc|aiff|amr|au|avi|cda|m4a|mid|mp3|mp4|mpeg|ogg|opus|ra|ram|snd|wav|wma)$/i;
 
 /**
+ * Vérifie si une URL cible une adresse locale, loopback ou une plage IP privée (protection SSRF).
+ * Couvre IPv4 (127.0.0.0/8, 0.0.0.0, 10/8, 172.16/12, 192.168/16, 169.254/16)
+ * et IPv6 (::1, ::, fe80::/10, fc00::/7, ::ffff:0:0/96).
+ *
+ * @param {string} urlStr - URL à analyser.
+ * @returns {boolean} true si l'hôte est local, privé ou invalide.
+ */
+export function isLocalOrPrivateHost(urlStr) {
+    try {
+        const u = new URL(urlStr);
+        const host = u.hostname.toLowerCase();
+        if (
+            host === 'localhost' ||
+            host.endsWith('.local') ||
+            host === '0.0.0.0' ||
+            /^127\./.test(host) ||
+            host === '::1' ||
+            host === '[::1]' ||
+            host === '::' ||
+            host === '[::]'
+        ) {
+            return true;
+        }
+        if (/^10\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host)) {
+            return true;
+        }
+        if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)) {
+            return true;
+        }
+        if (/^\[?(?:fe80:|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|::ffff:)/i.test(host)) {
+            return true;
+        }
+        return false;
+    } catch {
+        return true;
+    }
+}
+
+/**
  * Détecte si une URL pointe vers un fichier directement importable dans NotebookLM.
  * Combine l'analyse de l'extension URL (heuristique rapide) et une requête HEAD
  * pour confirmer le Content-Type réel. Retourne directImport: false pour toute
@@ -135,17 +174,29 @@ export async function detectFileType(url) {
     const isLocal = url.startsWith('file://');
 
     // 1. Heuristique rapide : extension URL
-    const urlPath = new URL(url).pathname.toLowerCase();
-    const extMatch = urlPath.match(SUPPORTED_EXT_REGEX);
+    let extMatch = null;
+    try {
+        const urlPath = new URL(url).pathname.toLowerCase();
+        extMatch = urlPath.match(SUPPORTED_EXT_REGEX);
+    } catch {
+        return { directImport: false };
+    }
 
-    // 2. Pour les URLs HTTP, confirmer via HEAD request
+    // 2. Pour les URLs HTTP(S) publiques, confirmer via HEAD request sans cookies (protection SSRF)
     let detectedMime = null;
-    if (!isLocal && url.startsWith('http')) {
+    if (!isLocal && /^https?:\/\//i.test(url) && !isLocalOrPrivateHost(url)) {
         try {
-            // ROB-5 : timeout de 5s pour éviter le blocage de l'UI si le serveur est lent
-            const headResp = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(5000) });
-            const contentType = headResp.headers.get('content-type') || '';
-            detectedMime = contentType.split(';')[0].trim().toLowerCase();
+            // ROB-5 & MAJ-SEC-1 : timeout de 5s + credentials omit + anti-redirection SSRF
+            const headResp = await fetch(url, {
+                method: 'HEAD',
+                credentials: 'omit',
+                redirect: 'follow',
+                signal: AbortSignal.timeout(5000)
+            });
+            if (headResp.ok && (!headResp.url || !isLocalOrPrivateHost(headResp.url))) {
+                const contentType = headResp.headers.get('content-type') || '';
+                detectedMime = contentType.split(';')[0].trim().toLowerCase();
+            }
         } catch (e) {
             console.warn('[MC] detectFileType — HEAD request échouée:', e.message);
         }

@@ -1,6 +1,6 @@
 # Privacy Policy — Magic Clipper for Gemini Notebook
 
-**Last updated:** October 24, 2026
+**Last updated:** October 25, 2026
 
 ---
 

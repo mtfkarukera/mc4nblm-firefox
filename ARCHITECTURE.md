@@ -87,6 +87,7 @@ Afin d'optimiser l'empreinte mémoire et respecter les directives de performance
 2. **À la demande** : Lors du clic sur "Capturer" dans la popup, `background.js` injecte dynamiquement les modules nécessaires via `browser.scripting.executeScript()` :
    - Pipeline PDF : `lib/Readability.js` ➔ `lib/jspdf.umd.min.js` ➔ `serializer.js` ➔ `pdf_generator.js`
    - Pipeline Markdown : `lib/Readability.js` ➔ `serializer.js` ➔ `md_generator.js`
+     *(En mode `md_rich`, chaque illustration est émise sous la double forme `![alt](url)` + `*[🖼️ alt](url)*` afin que le lecteur `<source-viewer>` de Gemini Notebook — qui filtre les balises `<img>` — affiche un lien bleu cliquable et indexe la légende de l'image).*
 3. **Sentinelles** : Chaque module enregistre une sentinelle sur `window` (ex: `window.nwcserializer`) pour éviter toute réinjection multiple sans utiliser `eval()`.
 
 ---

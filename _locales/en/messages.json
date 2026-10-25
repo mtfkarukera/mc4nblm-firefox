@@ -32,7 +32,7 @@
     "description": "Accessible label for the PDF button"
   },
   "btnMarkdown": {
-    "message": "Markdown",
+    "message": "MD",
     "description": "Button label — export as Markdown"
   },
   "btnMarkdownAriaLabel": {
@@ -48,7 +48,7 @@
     "description": "Accessible label for the URL button"
   },
   "btnScreenshot": {
-    "message": "Screenshot",
+    "message": "Screen",
     "description": "Button label — capture screenshot"
   },
   "btnScreenshotAriaLabel": {
@@ -394,7 +394,7 @@
     "description": "Tooltip for the create notebook button"
   },
   "btnPdfTitle": {
-    "message": "Embedded images, visual layout",
+    "message": "Structured text and tables, without images",
     "description": "Tooltip describing the PDF export mode"
   },
   "btnMarkdownTitle": {
