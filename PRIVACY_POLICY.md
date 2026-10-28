@@ -27,7 +27,7 @@ This extension **does not collect, store, transmit, or share any personal data**
 | `downloads` | Allow the user to download captured content (PDF/Markdown) to their local filesystem. |
 | `contextMenus` | Add a "Clip selection" item to the right-click context menu. |
 | `scripting` | Inject content scripts on-demand for PDF/Markdown generation (lazy loading). |
-| `<all_urls>` (host) | Enable the context menu and content script on all web pages. Required for the selection clipping feature to work universally. |
+| `*://notebook.google.com/*`, `*://notebooklm.google.com/*`, `<all_urls>` (host permissions) | Enable communication with Google Gemini Notebook, session cookie access, universal context menu, and content script injection on web pages. |
 
 ### Third-Party Libraries
 - **jsPDF 2.5.2** (MIT License) — Client-side PDF generation. No network calls.
@@ -61,7 +61,7 @@ Cette extension **ne collecte, ne stocke, ne transmet et ne partage aucune donn�
 | `downloads` | Permettre à l'utilisateur de télécharger le contenu capturé (PDF/Markdown) sur son système local. |
 | `contextMenus` | Ajouter un élément « Clipper la sélection » au menu contextuel clic droit. |
 | `scripting` | Injecter les scripts de contenu à la demande pour la génération PDF/Markdown (chargement paresseux). |
-| `<all_urls>` (hôte) | Activer le menu contextuel et le script de contenu sur toutes les pages web. Requis pour que la fonctionnalité de clip de sélection fonctionne universellement. |
+| `*://notebook.google.com/*`, `*://notebooklm.google.com/*`, `<all_urls>` (hôtes) | Permettre la communication avec Google Gemini Notebook, l'accès sécurisé aux cookies de session, le menu contextuel universel et l'injection de scripts de contenu sur les pages web. |
 
 ### Bibliothèques tierces
 - **jsPDF 2.5.2** (Licence MIT) — Génération PDF côté client. Aucun appel réseau.

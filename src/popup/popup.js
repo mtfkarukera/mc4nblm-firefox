@@ -26,6 +26,8 @@ const uiMainView = document.getElementById('main-view');
 const uiSettingsModesList = document.getElementById('settings-modes-list');
 const uiSettingsModesCounter = document.getElementById('settings-modes-counter');
 const uiToggleCreole = document.getElementById('toggle-creole');
+const warningBanner = document.getElementById('permission-warning-banner');
+const btnGrantPermission = document.getElementById('btn-grant-permission');
 
 // Définition des 8 modes personnalisables dans les paramètres (2 à 4 actifs, 'url' obligatoire)
 const ALL_MODES = [
@@ -377,48 +379,79 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Fonction de vérification d'authentification et de chargement des carnets
+  function checkAuthAndLoad() {
+    browser.runtime.sendMessage({ action: "GET_AUTH_STATUS" }).then((response) => {
+      if (response && response.status === "PERMISSION_MISSING") {
+        if (warningBanner) warningBanner.classList.remove('hidden');
+        updateAuthStatus(t('statusPermissionRequired'), "status-error");
+        setPlaceholder(uiNotebookList, t('permissionBannerText'));
+        return;
+      }
+
+      if (warningBanner) warningBanner.classList.add('hidden');
+
+      if (response && response.status === "CONNECTE") {
+        updateAuthStatus(t('statusConnected').replace('{type}', response.type), "status-success");
+        
+        if (response.type === "PERSONAL") {
+          browser.runtime.sendMessage({ action: "GET_ACCOUNTS" }).then(res => {
+            if (res && res.accounts && res.accounts.length > 1) {
+              const selectBox = document.getElementById("account-switcher");
+              if (selectBox) {
+                selectBox.replaceChildren();
+                res.accounts.forEach(acc => {
+                  const opt = document.createElement("option");
+                  opt.value = acc.index;
+                  opt.textContent = acc.email;
+                  if (acc.index === res.activeIndex) opt.selected = true;
+                  selectBox.appendChild(opt);
+                });
+                selectBox.classList.remove("hidden");
+                selectBox.addEventListener("change", (e) => {
+                  const newIndex = parseInt(e.target.value, 10);
+                  currentSelectedNotebookId = null;
+                  btnCapture.disabled = true;
+                  browser.runtime.sendMessage({ action: "SET_ACCOUNT", index: newIndex }).then(() => {
+                    loadNotebooks();
+                  });
+                });
+              }
+            }
+            loadNotebooks();
+          }).catch(() => loadNotebooks());
+        } else {
+          loadNotebooks();
+        }
+      } else {
+        updateAuthStatus(t('statusDisconnected'), "status-error");
+        setPlaceholder(uiNotebookList, t('errAuth'));
+      }
+    }).catch(() => {
+      updateAuthStatus(t('statusDisconnected'), "status-error");
+      setPlaceholder(uiNotebookList, t('errAuth'));
+    });
+  }
+
+  // Câblage du bouton d'autorisation 1-clic (Règle Gecko : appel synchrone au 1er tick)
+  if (btnGrantPermission) {
+    btnGrantPermission.addEventListener('click', () => {
+      browser.permissions.request({
+        origins: ["*://notebook.google.com/*", "*://notebooklm.google.com/*", "<all_urls>"]
+      }).then((granted) => {
+        if (granted) {
+          if (warningBanner) warningBanner.classList.add('hidden');
+          updateAuthStatus(t('statusPermissionGranted'), "status-success");
+          checkAuthAndLoad();
+        }
+      }).catch((err) => {
+        console.warn("[MC] Erreur lors de la demande de permissions :", err);
+      });
+    });
+  }
+
   // Connexion au background pour obtenir l'état et les carnets
-  browser.runtime.sendMessage({ action: "GET_AUTH_STATUS" }).then((response) => {
-     if(response && response.status === "CONNECTE") {
-         updateAuthStatus(t('statusConnected').replace('{type}', response.type), "status-success");
-         
-         if (response.type === "PERSONAL") {
-             browser.runtime.sendMessage({ action: "GET_ACCOUNTS" }).then(res => {
-                 if (res && res.accounts && res.accounts.length > 1) {
-                     const selectBox = document.getElementById("account-switcher");
-                     if(selectBox) {
-                         selectBox.replaceChildren();
-                         res.accounts.forEach(acc => {
-                             const opt = document.createElement("option");
-                             opt.value = acc.index;
-                             opt.textContent = acc.email;
-                             if (acc.index === res.activeIndex) opt.selected = true;
-                             selectBox.appendChild(opt);
-                         });
-                         selectBox.classList.remove("hidden");
-                         selectBox.addEventListener("change", (e) => {
-                             const newIndex = parseInt(e.target.value, 10);
-                             currentSelectedNotebookId = null;
-                             btnCapture.disabled = true;
-                             browser.runtime.sendMessage({ action: "SET_ACCOUNT", index: newIndex }).then(() => {
-                                 loadNotebooks(); // Recharger les carnets
-                             });
-                         });
-                     }
-                 }
-                 loadNotebooks();
-             }).catch(() => loadNotebooks());
-         } else {
-             loadNotebooks();
-         }
-     } else {
-         updateAuthStatus(t('statusDisconnected'), "status-error");
-         setPlaceholder(uiNotebookList, t('errAuth'));
-     }
-  }).catch(e => {
-     updateAuthStatus(t('statusDisconnected'), "status-error");
-     setPlaceholder(uiNotebookList, t('errAuth'));
-   });
+  checkAuthAndLoad();
    
    uiSearchInput.addEventListener('input', debounce((e) => {
      filterNotebooks(e.target.value);

@@ -161,15 +161,34 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.action === "GET_AUTH_STATUS") {
-        browser.cookies.getAll({ url: "https://notebook.google.com/" }).then(cookies => {
-            if (cookies && cookies.length > 0) {
-                sendResponse({ status: "CONNECTE", type: "PERSONAL" });
-            } else {
+        (async () => {
+            try {
+                // Vérifier d'abord si la permission hôte pour Google Notebook est accordée
+                const hasHostPerm = await browser.permissions.contains({
+                    origins: ["*://notebook.google.com/*"]
+                });
+
+                if (!hasHostPerm) {
+                    sendResponse({ status: "PERMISSION_MISSING", type: null });
+                    return;
+                }
+
+                // Recherche des cookies de session sur notebook.google.com avec fallback notebooklm.google.com
+                let cookies = await browser.cookies.getAll({ url: "https://notebook.google.com/" });
+                if (!cookies || cookies.length === 0) {
+                    cookies = await browser.cookies.getAll({ url: "https://notebooklm.google.com/" });
+                }
+
+                if (cookies && cookies.length > 0) {
+                    sendResponse({ status: "CONNECTE", type: "PERSONAL" });
+                } else {
+                    sendResponse({ status: "DECONNECTE", type: null });
+                }
+            } catch (err) {
+                console.warn("[MC] Erreur lors de la vérification du statut d'authentification :", err);
                 sendResponse({ status: "DECONNECTE", type: null });
             }
-        }).catch(() => {
-            sendResponse({ status: "DECONNECTE", type: null });
-        });
+        })();
         return true;
     }
 

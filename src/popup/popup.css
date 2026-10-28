@@ -796,3 +796,60 @@ footer { margin-bottom: 0; padding: 8px 12px; text-align: center; }
   margin-left: var(--space-sm);
   font-size: 12px;
 }
+
+/* Bandeau d'alerte pour permission requise */
+.permission-warning-banner {
+  background-color: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  color: var(--warning-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.permission-banner-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.permission-banner-icon {
+  font-size: 14px;
+}
+
+.permission-banner-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-main);
+}
+
+.btn-grant-permission {
+  align-self: flex-start;
+  margin-top: var(--space-xs);
+  padding: 6px 12px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  min-height: 32px;
+}
+
+.btn-grant-permission:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-grant-permission:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}

@@ -503,5 +503,20 @@
   },
   "modeScreenshotFullDesc": {
     "message": "Chụp toàn bộ trang web dưới dạng PNG"
+  },
+  "permissionBannerTitle": {
+    "message": "Yêu cầu quyền truy cập"
+  },
+  "permissionBannerText": {
+    "message": "Firefox cần quyền của bạn để truy cập Gemini Notebook và lưu trang web."
+  },
+  "btnGrantPermission": {
+    "message": "Cấp quyền truy cập trong 1 cú nhấp chuột"
+  },
+  "statusPermissionRequired": {
+    "message": "Yêu cầu quyền truy cập"
+  },
+  "statusPermissionGranted": {
+    "message": "Đã cấp quyền thành công!"
   }
 }

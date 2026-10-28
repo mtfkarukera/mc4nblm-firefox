@@ -1,6 +1,6 @@
 # 📎 Magic Clipper for Gemini Notebook — Extension Firefox MV3
 
-![Release](https://img.shields.io/badge/release-v6.3.2-blue.svg)
+![Release](https://img.shields.io/badge/release-v6.3.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MPL--2.0-green.svg)
 
 Capturez le contenu de n'importe quelle page web et importez-le directement dans un carnet **Google Gemini Notebook** (anciennement NotebookLM) — avec **8 modes personnalisables** (**PDF**, **PDF Riche**, **PDF Images pleine page**, **Markdown**, **Markdown Riche**, **URL / YouTube / Drive**, **Capture écran visible**, **Capture page entière**), **Import Direct** ou **Sélection de texte**. Compatible **Firefox Desktop et Android**. Optimisé pour l'analyse par Gemini (grounding IA intégré).
@@ -76,6 +76,7 @@ L'historique complet des versions et corrections est disponible dans le fichier 
 👉 **[Consulter CHANGELOG.md](CHANGELOG.md)**
 
 ### Dernières versions :
+- **v6.3.3** : Sécurisation et récupération 1-clic des permissions hôtes Gecko MV3 (déclaration explicite des origines Google et bandeau interactif de réactivation).
 - **v6.3.2** : Consolidation finale d'audit complet (sécurité anti-SSRF/IPC, robustesse mémoire, légendes d'images cliquables `MD+`, accessibilité WCAG 2.1 AA et assainissement documentaire des faux positifs d'ingestion).
 - **v6.3.1** : Intégration de la localisation portugaise complète (PT, 7 langues supportées au total), barre d'outils sur-mesure (2 à 4 modes parmi 8 via ⚙️), trio PDF (Simple, PDF+, PDF Images A4), Markdown+ riche, captures pleine page PNG et 14 icônes vectorielles SVG Jour/Nuit.
 - **v6.2.6** : Correctif critique du pipeline d'upload Scotty pour les captures d'écran (restauration du domaine `notebook.google.com/upload/_/` pour préserver les cookies `OSID`, restauration du header `Content-Type: application/x-www-form-urlencoded;charset=utf-8` à la finalisation, alignement `source-path=/notebook/{id}` et table de secours MIME).

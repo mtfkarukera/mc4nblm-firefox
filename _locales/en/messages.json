@@ -570,5 +570,20 @@
   },
   "modeScreenshotFullDesc": {
     "message": "Captures the entire scrollable page as PNG"
+  },
+  "permissionBannerTitle": {
+    "message": "Permission required"
+  },
+  "permissionBannerText": {
+    "message": "Firefox requires your permission to access Gemini Notebook and clip your web pages."
+  },
+  "btnGrantPermission": {
+    "message": "Grant access in 1 click"
+  },
+  "statusPermissionRequired": {
+    "message": "Permission required"
+  },
+  "statusPermissionGranted": {
+    "message": "Permission successfully granted!"
   }
 }

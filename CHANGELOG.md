@@ -4,6 +4,17 @@ Toutes les modifications majeures apportées au projet **Magic Clipper for Gemin
 
 ---
 
+## [v6.3.3] — 2026-10-26
+
+### 🛡️ Résilience Permissions Gecko MV3 & Autorisation 1-Clic
+- **Sécurisation & Résilience des Permissions Hôtes Gecko MV3 (`manifest.json`, `background.js`, `popup.html`, `popup.js`, `popup.css`, `_locales/`)** :
+  - **Déclaration explicite des origines Google** : Ajout de `*://notebook.google.com/*` et `*://notebooklm.google.com/*` dans `host_permissions` aux côtés de `<all_urls>`.
+  - **Détection proactive & Fallback domaine** : `GET_AUTH_STATUS` vérifie d'abord `browser.permissions.contains({ origins: ["*://notebook.google.com/*"] })` et renvoie `PERMISSION_MISSING` si l'utilisateur ou le profil Gecko a désactivé l'accès hôte. Recherche des cookies étendue avec fallback transparent sur `notebooklm.google.com`.
+  - **Bandeau d'autorisation 1-clic** : Affichage d'un bandeau d'alerte contextuel accessible (`#permission-warning-banner`) dans la popup permettant de réaccorder les permissions nécessaires en 1 clic via `browser.permissions.request()` au premier tick synchrone de l'interaction utilisateur.
+  - **Internationalisation complète** : Traduction des 5 nouvelles clés de notification et d'action dans les 7 langues supportées (`fr`, `en`, `de`, `es`, `pt`, `vi`, `gcf`).
+
+---
+
 ## [v6.3.2] — 2026-10-26
 
 ### 🛡️ Audit Complet (`/code-audit`) — Sécurité, Robustesse, Accessibilité WCAG AA & Finitions

@@ -604,5 +604,20 @@
   "modeScreenshotFullDesc": {
     "message": "Captura toda a página com rolagem em PNG",
     "description": "Setting checkbox description for full page screenshot"
+  },
+  "permissionBannerTitle": {
+    "message": "Permissão necessária"
+  },
+  "permissionBannerText": {
+    "message": "O Firefox precisa da sua permissão para acessar o Gemini Notebook e capturar suas páginas."
+  },
+  "btnGrantPermission": {
+    "message": "Permitir acesso em 1 clique"
+  },
+  "statusPermissionRequired": {
+    "message": "Permissão necessária"
+  },
+  "statusPermissionGranted": {
+    "message": "Permissão concedida com sucesso!"
   }
 }

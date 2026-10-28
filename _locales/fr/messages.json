@@ -503,5 +503,20 @@
   },
   "modeScreenshotFullDesc": {
     "message": "Capture l'intégralité de la page en PNG"
+  },
+  "permissionBannerTitle": {
+    "message": "Autorisation requise"
+  },
+  "permissionBannerText": {
+    "message": "Firefox nécessite votre accord pour accéder à Gemini Notebook et capturer vos pages."
+  },
+  "btnGrantPermission": {
+    "message": "Autoriser l'accès en 1 clic"
+  },
+  "statusPermissionRequired": {
+    "message": "Autorisation requise"
+  },
+  "statusPermissionGranted": {
+    "message": "Autorisation accordée avec succès !"
   }
 }

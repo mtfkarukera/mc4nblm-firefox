@@ -2,7 +2,7 @@
 
 > **Extension Firefox (Manifest V3)**  
 > **Auteur & Conception** : MTF Karukera  
-> **Version de référence** : v6.3.0 (Octobre 2026)
+> **Version de référence** : v6.3.3 (Octobre 2026)
 
 ---
 
@@ -101,11 +101,13 @@ Afin d'optimiser l'empreinte mémoire et respecter les directives de performance
   - Champ d'annotation d'intention (*Intent Note*) injecté en en-tête des documents PDF/MD.
   - Internationalisation complète via `t()` et `applyI18n()` (support des locales natifs et de la locale hybride créole `gcf`).
   - Accessibilité WCAG 2.1 AA intégrée : navigation au clavier par Roving Tabindex sur `#notebook-list`, indicateurs `:focus-visible` nets, et bouton Fermer secondaire neutre certifié haute lisibilité (> 5.2:1 en clair, > 6.4:1 en sombre).
+  - Bandeau d'alerte et recouvrement d'autorisation 1-clic : si les permissions d'hôtes sont désactivées dans `about:addons` ou absentes, un bandeau d'alerte accessible `#permission-warning-banner` apparaît et permet la réactivation immédiate via `browser.permissions.request()` au premier tick synchrone d'événement utilisateur.
 
 ---
 
 ## 3. Sécurité & Conformité CSP
 
+- **Gestion des permissions hôtes Gecko MV3** : Déclaration explicite des origines indispensables (`*://notebook.google.com/*`, `*://notebooklm.google.com/*`, `<all_urls>`) dans `manifest.json`. Vérification proactive du statut d'autorisation via `browser.permissions.contains()` lors de `GET_AUTH_STATUS` et récupération transparente en 1 clic sans rupture de flux.
 - **Zéro `innerHTML`** : La manipulation du DOM s'effectue exclusivement via `createElement`, `textContent` et `replaceChildren`.
 - **Conformité CSP MV3** : `script-src 'self'; object-src 'none'`. Aucun `eval()` ou `new Function()`.
 - **Isolation Réseau** : Tous les échanges avec l'API Google Gemini Notebook transitent exclusivement par le background script (exempt CORS). Les content scripts n'effectuent aucun appel réseau direct.

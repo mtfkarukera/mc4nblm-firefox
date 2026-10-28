@@ -50,6 +50,20 @@
 
   <!-- VUE PRINCIPALE -->
   <div id="main-view" class="main-view">
+    <!-- Bandeau dynamique d'alerte permission (masqué par défaut) -->
+    <div id="permission-warning-banner" class="permission-warning-banner hidden" role="alert">
+      <div class="permission-banner-header">
+        <span class="permission-banner-icon" aria-hidden="true">⚠️</span>
+        <strong data-i18n="permissionBannerTitle">Autorisation requise</strong>
+      </div>
+      <p class="permission-banner-text" data-i18n="permissionBannerText">
+        Firefox nécessite votre accord pour accéder à Gemini Notebook et capturer vos pages.
+      </p>
+      <button id="btn-grant-permission" class="btn-grant-permission" type="button" data-i18n="btnGrantPermission">
+        Autoriser l'accès en 1 clic
+      </button>
+    </div>
+
     <!-- RECHERCHE & SELECTION CARNET -->
     <section class="research-section">
       <label for="notebook-search" data-i18n="popupLabelSelectNotebook">Vos Carnets</label>

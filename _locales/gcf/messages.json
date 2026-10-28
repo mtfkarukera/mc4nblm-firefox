@@ -503,5 +503,20 @@
   },
   "modeScreenshotFullDesc": {
     "message": "Ka kaptiré tout paj-la an PNG"
+  },
+  "permissionBannerTitle": {
+    "message": "Otorizasyon nésésè"
+  },
+  "permissionBannerText": {
+    "message": "Firefox bizwen lakò a-w pou rantré adan Gemini Notebook épi kapiré sé paj a-w la."
+  },
+  "btnGrantPermission": {
+    "message": "Baw otorizasyon an 1 klik"
+  },
+  "statusPermissionRequired": {
+    "message": "Otorizasyon nésésè"
+  },
+  "statusPermissionGranted": {
+    "message": "Otorizasyon bay épi siksè !"
   }
 }
